@@ -1,75 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Muscle Log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
-  background: #2b2b2b !important;
-  color: #f5f5f5 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  padding: 18px;
+  background:#2b2b2b;
+  color:#f5f5f5;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  padding:16px;
 }
 
 h1 {
-  color: #f2c94c !important;
-  text-align: center;
-  margin-bottom: 16px;
+  text-align:center;
+  color:#f2c94c;
+  margin-bottom:18px;
 }
 
 h2 {
-  color: #e0e0e0 !important;
-  text-align: center;
-  margin: 12px 0;
+  text-align:center;
+  color:#ddd;
+  margin:12px 0;
 }
 
 button {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  background: #3a3a3a !important;
-  color: #f2c94c !important;
-  border: 1px solid #555 !important;
-  border-radius: 10px;
-  font-weight: 600;
+  width:100%;
+  padding:14px;
+  margin:6px 0;
+  background:#3a3a3a;
+  color:#f2c94c;
+  border:1px solid #555;
+  border-radius:10px;
+  font-weight:600;
 }
 
 .exercise.active {
-  background: #f2c94c !important;
-  color: #000 !important;
+  background:#f2c94c;
+  color:#000;
 }
 
 .card {
-  background: #383838 !important;
-  border: 1px solid #555 !important;
-  border-radius: 12px;
-  padding: 14px;
-  margin: 12px 0;
+  background:#383838;
+  border:1px solid #555;
+  border-radius:12px;
+  padding:14px;
+  margin:10px 0;
 }
 
 input {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0;
-  background: #444 !important;
-  color: #fff !important;
-  border: 1px solid #666 !important;
-  border-radius: 10px;
-  font-size: 15px;
-}
-
-input::placeholder {
-  color: #ddd !important;
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  background:#444;
+  color:#fff;
+  border:1px solid #666;
+  border-radius:10px;
 }
 
 .timer {
-  font-size: 30px;
-  text-align: center;
-  color: #f2c94c !important;
+  font-size:32px;
+  text-align:center;
+  margin:10px 0;
+  color:#f2c94c;
 }
-</style
+
+.log-entry {
+  border-bottom:1px solid #555;
+  padding:6px 0;
+  font-size:14px;
+}
+</style>
 </head>
 
 <body>
@@ -82,119 +84,4 @@ input::placeholder {
 <h2 id="dayTitle"></h2>
 
 <div class="card" id="selected">No exercise selected</div>
-<div class="card" id="last">Last: —</div>
-<div class="card" id="set">Set: 0</div>
-
-<div id="exercises"></div>
-
-<input id="weight" placeholder="Weight (kg)">
-<input id="reps" placeholder="Reps">
-<input id="rir" placeholder="RIR">
-
-<button onclick="saveSet()">Save Set</button>
-
-<div class="card">
-  <h2>Rest</h2>
-  <div class="timer" id="timer">00:00</div>
-  <button onclick="startTimer(60)">60s</button>
-  <button onclick="startTimer(90)">90s</button>
-</div>
-
-<script>
-var workouts = {
- A:["Goblet Squat","RDL","bench press","OHP","One-Arm Row","Pull-ups"],
- B:["Split Squat","DB RDL","DB Press","Lateral Raise","DB Row","Curl","Triceps"]
-};
-
-var logs = JSON.parse(localStorage.getItem("logs")||"[]");
-var currentEx = "";
-var setCount = 0;
-var timerInt = null;
-
-function loadDay(d){
- document.getElementById("dayTitle").innerText =
-   d==="A"?"Day A – Heavy":"Day B – Volume";
- document.getElementById("exercises").innerHTML="";
- currentEx="";
- setCount=0;
- document.getElementById("set").innerText="Set: 0";
- document.getElementById("selected").innerText="No exercise selected";
- document.getElementById("last").innerText="Last: —";
-
- workouts[d].forEach(function(name){
-   var b=document.createElement("button");
-   b.innerText=name;
-   b.className="exercise";
-   b.onclick=function(){ selectEx(name,b); };
-   document.getElementById("exercises").appendChild(b);
- });
-}
-
-function selectEx(name,btn){
- document.querySelectorAll(".exercise").forEach(function(b){
-   b.classList.remove("active");
- });
- btn.classList.add("active");
- currentEx=name;
- setCount=0;
- document.getElementById("set").innerText="Set: 0";
- document.getElementById("selected").innerText="Selected: "+name;
-
- var last=[...logs].reverse().find(l=>l.ex===name);
- if(last){
-   document.getElementById("last").innerText="Last: "+last.w+"kg × "+last.r;
-   document.getElementById("weight").value=last.w;
- } else {
-   document.getElementById("last").innerText="Last: —";
-   document.getElementById("weight").value="";
- }
-}
-
-function saveSet(){
- if(!currentEx){ alert("Select exercise"); return; }
- setCount++;
- document.getElementById("set").innerText="Set: "+setCount;
- logs.push({
-   ex:currentEx,
-   w:document.getElementById("weight").value,
-   r:document.getElementById("reps").value,
-   rir:document.getElementById("rir").value
- });
- localStorage.setItem("logs",JSON.stringify(logs));
-}
-
-function startTimer(sec){
- clearInterval(timerInt);
- var t=sec;
- document.getElementById("timer").innerText="00:"+sec;
-
- timerInt=setInterval(function(){
-   t--;
-   document.getElementById("timer").innerText =
-     "00:"+String(t).padStart(2,"0");
-
-   if(t<=0){
-     clearInterval(timerInt);
-
-     // 🔔 Beep (if not muted)
-     try {
-       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-       const osc = ctx.createOscillator();
-       osc.type = "sine";
-       osc.frequency.setValueAtTime(800, ctx.currentTime);
-       osc.connect(ctx.destination);
-       osc.start();
-       osc.stop(ctx.currentTime + 0.25);
-     } catch(e){}
-
-     // 📳 Vibration (Android)
-     if (navigator.vibrate) {
-       navigator.vibrate([300, 150, 300]);
-     }
-   }
- },1000);
-}
-</script>
-
-</body>
-</html>
+<div class="
