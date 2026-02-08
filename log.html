@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workout Log</title>
+<title>Log</title>
 <style>
 body {
   margin:0;
@@ -34,7 +34,7 @@ a { color:#f2c94c; text-decoration:none; }
 <div class="container" id="logBox"></div>
 
 <script>
-const logs = JSON.parse(localStorage.getItem("logs")||"[]");
+const logs = JSON.parse(localStorage.getItem("logs")) || [];
 const box = document.getElementById("logBox");
 
 const grouped = {};
@@ -43,13 +43,11 @@ logs.forEach(l=>{
   grouped[l.date].push(l);
 });
 
-Object.keys(grouped).reverse().forEach(date=>{
-  const c=document.createElement("div");
-  c.className="card";
-  c.innerHTML=`<div class="highlight">${date}</div>` +
-    grouped[date].map(l=>
-      `<div class="small">${l.exercise} — ${l.weight}kg x ${l.reps} (RIR ${l.rir})</div>`
-    ).join("");
+Object.keys(grouped).reverse().forEach(d=>{
+  const c = document.createElement("div");
+  c.className = "card";
+  c.innerHTML = `<div class="highlight">${d}</div>` +
+    grouped[d].map(l=>`<div class="small">${l.exercise} — ${l.weight}kg x ${l.reps}</div>`).join("");
   box.appendChild(c);
 });
 </script>
