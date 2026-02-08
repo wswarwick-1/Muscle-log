@@ -101,7 +101,7 @@ input, select {
 <!-- WORKOUT SELECT -->
 <div class="card">
   <div class="highlight">Workout</div>
-  <select id="workoutSelect"></select>
+  <select id="workoutSelect" onchange="loadWorkout()"></select>
   <div id="exerciseList"></div>
 </div>
 
@@ -284,3 +284,4 @@ document.getElementById("saveWorkoutBtn").onclick = () => {
 
 </body>
 </html>
+
