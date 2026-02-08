@@ -116,7 +116,25 @@ function selectExercise(name, btn){
   setsDiv.innerText = "Set: 0";
   statusDiv.innerText = "Selected: " + name;
 }
+function useCustomExercise(){
+  const input = document.getElementById("customExercise");
+  const name = input.value.trim();
 
+  if(!name){
+    alert("Enter an exercise name");
+    return;
+  }
+
+  // Clear preset highlights
+  document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
+
+  currentExercise = name;
+  setCount = 0;
+  setsDiv.innerText = "Set: 0";
+  statusDiv.innerText = "Selected: " + name;
+
+  input.value = "";
+}
 /* CHANGE EXERCISE */
 function changeExercise(){
   currentExercise = "";
@@ -197,5 +215,6 @@ drawLog();
 
 </body>
 </html>
+
 
 
