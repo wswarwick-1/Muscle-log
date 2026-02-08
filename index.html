@@ -115,8 +115,12 @@ function changeExercise(){
   currentExercise = "";
   setCount = 0;
   setsDiv.innerText = "Set: 0";
-  statusDiv.innerText = "No exercise selected";
-  document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
+  statusDiv.innerText = "Select a new exercise";
+
+  document.querySelectorAll(".exercise").forEach(b=>{
+    b.classList.remove("active");
+    b.disabled = false;   // 🔑 ensure buttons are re-selectable
+  });
 }
 
 /* SAVE SET */
@@ -186,3 +190,4 @@ drawLog();
 
 </body>
 </html>
+
