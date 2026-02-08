@@ -1,260 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Muscle Log</title>
 
 <style>
 body {
-  margin:0;
-  font-family: system-ui, sans-serif;
   background:#2f2f2f;
   color:#f5f5f5;
+  font-family:Arial;
+  padding:16px;
 }
-header {
-  background:#1f1f1f;
-  padding:14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-a { color:#f2c94c; text-decoration:none; }
 
 h1 {
   text-align:center;
   color:#f2c94c;
-  margin:18px 0;
-}
-
-.container { max-width:520px; margin:auto; padding:12px; }
-
-.card {
-  background:#3a3a3a;
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:12px;
 }
 
 button {
   width:100%;
   padding:14px;
-  border-radius:16px;
+  margin:8px 0;
   border:none;
-  background:#444;
+  border-radius:14px;
+  background:#3a3a3a;
   color:#f2c94c;
   font-size:16px;
-  margin-top:8px;
+}
+
+.card {
+  background:#3a3a3a;
+  padding:14px;
+  border-radius:14px;
+  margin:10px 0;
 }
 
 input {
   width:100%;
   padding:12px;
-  margin-top:8px;
-  border-radius:14px;
+  margin:6px 0;
+  border-radius:10px;
   border:none;
-  background:#2b2b2b;
+  background:#444;
   color:#fff;
   font-size:15px;
 }
-
-.exercise-btn {
-  padding:10px;
-  margin-top:6px;
-  background:#2b2b2b;
-  border-radius:12px;
-}
-.exercise-btn.active {
-  background:#f2c94c;
-  color:#000;
-}
-
-.small { font-size:13px; opacity:.85; }
-.highlight { color:#f2c94c; font-weight:600; }
-.center { text-align:center; }
 </style>
 </head>
 
 <body>
 
-<header>
-  <div>training Log</div>
-  <a href="log.html">Log</a>
-</header>
+<h1>Muscle Log</h1>
 
-<h1>Training log</h1>
+<button onclick="loadWorkout()">Load Workout</button>
 
-<div class="container">
+<div class="card" id="status">No exercise selected</div>
+<div class="card" id="sets">Set: 0</div>
 
-<!-- ACTIVE EXERCISE -->
-<div class="card">
-  <div class="highlight">Active Exercise</div>
-  <div id="currentExercise">None</div>
-  <div class="small">PR: <span id="prDisplay">—</span></div>
-  <div class="small">Set: <span id="setCount">0</span></div>
+<button onclick="showCustom()">Change Exercise</button>
+
+<div class="card" id="customBox" style="display:none">
+  <input id="customExercise" placeholder="Type any exercise">
+  <button onclick="useCustom()">Use this exercise</button>
 </div>
 
-<!-- WORKOUT LOADER -->
-<div class="card">
-  <div class="highlight">Workout Plan</div>
-  <select id="workoutSelect" onchange="loadWorkout()"></select>
-  <div id="workoutExercises"></div>
-</div>
-<!-- BUILD WORKOUT -->
-<div class="card">
-  <div class="highlight">Build Workout</div>
+<input id="weight" placeholder="Weight (kg)" type="number">
+<input id="reps" placeholder="Reps" type="number">
 
-  <input id="newWorkoutName" placeholder="Workout name">
-
-  <input id="newWorkoutExercise" placeholder="Add exercise">
-  <button onclick="addExerciseToBuilder()">Add Exercise</button>
-
-  <div id="builderPreview" class="small" style="margin-top:8px;"></div>
-
-  <button onclick="saveBuiltWorkout()">Save Workout</button>
-</div>
-<!-- LOG SET -->
-<div class="card">
-  <div class="highlight">Log Set</div>
-  <input id="weight" type="number" placeholder="Weight (kg)">
-  <input id="reps" type="number" placeholder="Reps">
-  <input id="rir" type="number" placeholder="RIR">
-  <button onclick="saveSet()">Save Set</button>
-</div>
-
-<!-- REST TIMER -->
-<div class="card center">
-  <div class="highlight">Rest Timer</div>
-  <input id="restInput" type="number" value="120">
-  <div id="timerDisplay" style="font-size:28px;margin:10px 0;">00:00</div>
-  <button onclick="startTimer()">Start</button>
-  <button onclick="resetTimer()">Reset</button>
-</div>
-
-</div>
+<button onclick="saveSet()">Save Set</button>
 
 <script>
 let currentExercise = null;
 let setCount = 0;
-let timerInterval;
 
-const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-const prs = JSON.parse(localStorage.getItem("prs") || "{}");
-const workouts = JSON.parse(localStorage.getItem("workouts") || {});
+function loadWorkout(){
+  selectExercise("Goblet Squat");
+}
 
-function setExercise(name){
-  currentExercise = name;
+function selectExercise(ex){
+  currentExercise = ex;
   setCount = 0;
-  document.getElementById("currentExercise").innerText = name;
-  document.getElementById("setCount").innerText = "0";
-  document.getElementById("prDisplay").innerText =
-    prs[name] ? `${prs[name].weight}kg x ${prs[name].reps}` : "—";
+  document.getElementById("status").innerText = ex;
+  document.getElementById("sets").innerText = "Set: 0";
+}
 
-  document.querySelectorAll(".exercise-btn").forEach(b=>{
-    b.classList.toggle("active", b.innerText === name);
-  });
+function showCustom(){
+  document.getElementById("customBox").style.display = "block";
+}
+
+function useCustom(){
+  const ex = document.getElementById("customExercise").value;
+  if(!ex) return;
+  selectExercise(ex);
+  document.getElementById("customExercise").value = "";
+  document.getElementById("customBox").style.display = "none";
 }
 
 function saveSet(){
-  if(!currentExercise) return alert("Select exercise");
-
-  const w = +weight.value, r = +reps.value;
-  if(!w || !r) return;
-<div class="card" id="status">No exercise selected</div>
+  if(!currentExercise) return alert("Select an exercise");
+  const w = weight.value;
+  const r = reps.value;
+  if(!w || !r) return alert("Enter weight & reps");
   setCount++;
-  document.getElementById("setCount").innerText = setCount;
-
-  const score = w*r;
-  if(!prs[currentExercise] || score > prs[currentExercise].score){
-    prs[currentExercise] = {weight:w,reps:r,score};
-    localStorage.setItem("prs",JSON.stringify(prs));
-    document.getElementById("prDisplay").innerText = `${w}kg x ${r}`;
-  }
-
-  logs.push({
-    date:new Date().toISOString().slice(0,10),
-    exercise:currentExercise,
-    weight:w,
-    reps:r,
-    rir:rir.value
-  });
-
-  localStorage.setItem("logs",JSON.stringify(logs));
-  weight.value=reps.value=rir.value="";
+  document.getElementById("sets").innerText = `Set: ${setCount}`;
+  weight.value = "";
+  reps.value = "";
 }
-
-function loadWorkout(){
-  const name = workoutSelect.value;
-  const box = document.getElementById("workoutExercises");
-  box.innerHTML="";
-  if(!workouts[name]) return;
-
-  workouts[name].forEach(ex=>{
-    const d=document.createElement("div");
-    d.className="exercise-btn";
-    d.innerText=ex;
-    d.onclick=()=>setExercise(ex);
-    box.appendChild(d);
-  });
-}
-
-function startTimer(){
-  clearInterval(timerInterval);
-  let time = +restInput.value;
-  updateTimer(time);
-  timerInterval=setInterval(()=>{
-    time--;
-    updateTimer(time);
-    if(time<=0) clearInterval(timerInterval);
-  },1000);
-}
-function resetTimer(){
-  clearInterval(timerInterval);
-  updateTimer(0);
-}
-function updateTimer(t){
-  const m=String(Math.floor(t/60)).padStart(2,"0");
-  const s=String(t%60).padStart(2,"0");
-  timerDisplay.innerText=`${m}:${s}`;
-}
-
-function init(){
-  workoutSelect.innerHTML='<option value="">Select workout</option>';
-  Object.keys(workouts).forEach(w=>{
-    const o=document.createElement("option");
-    o.value=w;o.innerText=w;
-    workoutSelect.appendChild(o);
-  });
-}
-init();
-  let builderBuffer = [];
-
-function addExerciseToBuilder(){
-  const ex = document.getElementById("newWorkoutExercise").value.trim();
-  if(!ex) return;
-
-  builderBuffer.push(ex);
-  document.getElementById("newWorkoutExercise").value = "";
-
-  document.getElementById("builderPreview").innerHTML =
-    builderBuffer.map((e,i)=>`${i+1}. ${e}`).join("<br>");
-}
-
-function saveBuiltWorkout(){
-  const name = document.getElementById("newWorkoutName").value.trim();
-  if(!name || builderBuffer.length === 0) return alert("Add name & exercises");
-
-  workouts[name] = [...builderBuffer];
-  localStorage.setItem("workouts", JSON.stringify(workouts));
-
-  builderBuffer = [];
-  document.getElementById("newWorkoutName").value = "";
-  document.getElementById("builderPreview").innerHTML = "";
-
-  init(); // refresh workout dropdown
-    }
 </script>
 
 </body>
 </html>
-
