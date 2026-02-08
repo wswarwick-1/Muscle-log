@@ -1,19 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Muscle Log</title>
 
 <style>
-body { background:#2b2b2b; color:#f5f5f5; font-family:Arial; padding:16px; }
+body {
+  background:#2b2b2b;
+  color:#f5f5f5;
+  font-family:Arial, sans-serif;
+  padding:16px;
+}
 h1 { text-align:center; color:#f2c94c; }
-button { width:100%; padding:14px; margin:6px 0; background:#3a3a3a; color:#f2c94c; border:1px solid #555; border-radius:10px; }
-.exercise.active { background:#f2c94c; color:#000; }
-.card { background:#383838; border:1px solid #555; border-radius:12px; padding:14px; margin:10px 0; }
-input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; border:1px solid #666; border-radius:10px; }
-.timer { font-size:32px; text-align:center; color:#f2c94c; }
-.log { font-size:14px; border-bottom:1px solid #555; padding:4px 0; }
-.small { font-size:13px; opacity:0.8; }
+
+button {
+  width:100%;
+  padding:14px;
+  margin:6px 0;
+  background:#3a3a3a;
+  color:#f2c94c;
+  border:1px solid #555;
+  border-radius:10px;
+}
+
+.exercise.active {
+  background:#f2c94c;
+  color:#000;
+}
+
+.card {
+  background:#383838;
+  border:1px solid #555;
+  border-radius:12px;
+  padding:14px;
+  margin:10px 0;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  background:#444;
+  color:#fff;
+  border:1px solid #666;
+  border-radius:10px;
+}
+
+.timer {
+  font-size:32px;
+  text-align:center;
+  color:#f2c94c;
+}
+
+.log {
+  font-size:14px;
+  border-bottom:1px solid #555;
+  padding:4px 0;
+}
+
+.small {
+  font-size:13px;
+  opacity:0.8;
+}
 </style>
 </head>
 
@@ -21,35 +70,35 @@ input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; bor
 
 <h1>Muscle Log</h1>
 
-<button onclick="loadDay('A')">Day A – Heavy</button>
-<button onclick="loadDay('B')">Day B – Volume</button>
+<button id="dayA">Day A – Heavy</button>
+<button id="dayB">Day B – Volume</button>
 
 <div class="card" id="status">No exercise selected</div>
 <div class="card" id="sets">Set: 0</div>
 
-<button onclick="changeExercise()">Change Exercise</button>
+<button id="changeExercise">Change Exercise</button>
 
-
-  <div class="card">
+<div class="card">
   <div class="small">Custom exercise</div>
-  <input id="customExercise" placeholder="Type any exercise name">
-<button onclick="useCustomExercise()">Use this exercise</button>
+  <input id="customExercise" placeholder="Type any exercise">
+  <button id="useCustom">Use this exercise</button>
+</div>
 
-<div id="exercises"></div>
+<div id="exerciseList"></div>
 
-<input id="w" placeholder="Weight (kg)">
-<input id="r" placeholder="Reps">
+<input id="weight" placeholder="Weight (kg)">
+<input id="reps" placeholder="Reps">
 <input id="rir" placeholder="RIR">
 
-<button onclick="saveSet()">Save Set</button>
+<button id="saveSet">Save Set</button>
 
 <div class="card">
   <h2>Rest Timer</h2>
   <div class="small">Rest time (seconds)</div>
-  <input id="restInput" type="number" min="10" step="10">
+  <input id="restInput" type="number" value="60">
   <div class="timer" id="timer">01:00</div>
-  <button onclick="startTimer()">Start</button>
-  <button onclick="resetTimer()">Reset</button>
+  <button id="startTimer">Start</button>
+  <button id="resetTimer">Reset</button>
 </div>
 
 <div class="card">
@@ -58,16 +107,19 @@ input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; bor
 </div>
 
 <script>
-/* DOM REFERENCES (CRITICAL FIX) */
-const exercisesDiv = document.getElementById("exercises");
+/* ELEMENTS */
 const statusDiv = document.getElementById("status");
 const setsDiv = document.getElementById("sets");
+const exerciseList = document.getElementById("exerciseList");
 const logDiv = document.getElementById("log");
+
+const customInput = document.getElementById("customExercise");
 const restInput = document.getElementById("restInput");
 const timerDisplay = document.getElementById("timer");
-const w = document.getElementById("w");
-const r = document.getElementById("r");
-const rir = document.getElementById("rir");
+
+const weightInput = document.getElementById("weight");
+const repsInput = document.getElementById("reps");
+const rirInput = document.getElementById("rir");
 
 /* DATA */
 const workouts = {
@@ -75,23 +127,17 @@ const workouts = {
   B:["Split Squat","DB RDL","DB Press","Lateral Raise","Curl","Triceps"]
 };
 
-let currentExercise = "";
 let currentDay = "A";
+let currentExercise = "";
 let setCount = 0;
 let timer = 60;
 let interval = null;
 let logs = JSON.parse(localStorage.getItem("logs") || "[]");
 
-/* REST TIMER PREF */
-const savedRest = parseInt(localStorage.getItem("restTime")) || 60;
-restInput.value = savedRest;
-timer = savedRest;
-updateTimer();
-
 /* LOAD DAY */
 function loadDay(day){
   currentDay = day;
-  exercisesDiv.innerHTML = "";
+  exerciseList.innerHTML = "";
   currentExercise = "";
   setCount = 0;
   setsDiv.innerText = "Set: 0";
@@ -101,8 +147,8 @@ function loadDay(day){
     const btn = document.createElement("button");
     btn.innerText = name;
     btn.className = "exercise";
-    btn.onclick = ()=>selectExercise(name, btn);
-    exercisesDiv.appendChild(btn);
+    btn.onclick = () => selectExercise(name, btn);
+    exerciseList.appendChild(btn);
   });
 }
 
@@ -115,59 +161,28 @@ function selectExercise(name, btn){
   setsDiv.innerText = "Set: 0";
   statusDiv.innerText = "Selected: " + name;
 }
+
+/* CUSTOM EXERCISE */
 function useCustomExercise(){
-  const input = document.getElementById("customExercise");
-  const name = input.value.trim();
+  const name = customInput.value.trim();
+  if(!name) return alert("Enter exercise name");
 
-  if(!name){
-    alert("Enter an exercise name");
-    return;
-  }
-
-  // Clear preset highlights
-  document.querySelectorAll(".exercise")
-    .forEach(b => b.classList.remove("active"));
-
-  // 🔑 USE THE SAME STATE AS PRESETS
-  currentExercise = name;
-  setCount = 0;
-
-  setsDiv.innerText = "Set: 0";
-  statusDiv.innerText = "Selected: " + name;
-
-  // Clear input after selection
-  input.value = "";
-}
-
-  // Clear preset highlights
   document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
-
   currentExercise = name;
   setCount = 0;
   setsDiv.innerText = "Set: 0";
   statusDiv.innerText = "Selected: " + name;
-
-  input.value = "";
+  customInput.value = "";
 }
+
 /* CHANGE EXERCISE */
 function changeExercise(){
-  currentExercise = "";
-  setCount = 0;
-  setsDiv.innerText = "Set: 0";
-  statusDiv.innerText = "Select a new exercise";
-
-  document.querySelectorAll(".exercise").forEach(b=>{
-    b.classList.remove("active");
-    b.disabled = false;   // 🔑 ensure buttons are re-selectable
-  });
+  loadDay(currentDay);
 }
 
 /* SAVE SET */
 function saveSet(){
-  if(!currentExercise){
-    alert("Select an exercise first");
-    return;
-  }
+  if(!currentExercise) return alert("Select an exercise first");
 
   setCount++;
   setsDiv.innerText = "Set: " + setCount;
@@ -176,9 +191,9 @@ function saveSet(){
     date:new Date().toISOString().split("T")[0],
     day:currentDay,
     exercise:currentExercise,
-    weight:w.value,
-    reps:r.value,
-    rir:rir.value
+    weight:weightInput.value,
+    reps:repsInput.value,
+    rir:rirInput.value
   });
 
   localStorage.setItem("logs", JSON.stringify(logs));
@@ -197,7 +212,6 @@ function drawLog(){
 function startTimer(){
   if(interval) return;
   timer = parseInt(restInput.value) || 60;
-  localStorage.setItem("restTime", timer);
   updateTimer();
 
   interval = setInterval(()=>{
@@ -222,15 +236,20 @@ function updateTimer(){
   timerDisplay.innerText = "00:" + String(timer).padStart(2,"0");
 }
 
+/* BUTTON WIRING */
+document.getElementById("dayA").onclick = () => loadDay("A");
+document.getElementById("dayB").onclick = () => loadDay("B");
+document.getElementById("useCustom").onclick = useCustomExercise;
+document.getElementById("changeExercise").onclick = changeExercise;
+document.getElementById("saveSet").onclick = saveSet;
+document.getElementById("startTimer").onclick = startTimer;
+document.getElementById("resetTimer").onclick = resetTimer;
+
 /* INIT */
 loadDay("A");
 drawLog();
+updateTimer();
 </script>
 
 </body>
 </html>
-
-
-
-
-
