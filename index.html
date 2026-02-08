@@ -141,7 +141,12 @@ const defaultWorkouts = {
 };
 
 /* -------- STATE -------- */
-let workouts = JSON.parse(localStorage.getItem("workouts")) || defaultWorkouts;
+let workouts = JSON.parse(localStorage.getItem("workouts"));
+
+if (!workouts) {
+  workouts = defaultWorkouts;
+  localStorage.setItem("workouts", JSON.stringify(workouts));
+};
 let logs = JSON.parse(localStorage.getItem("logs")) || [];
 let currentWorkout = null;
 let currentExercise = null;
@@ -241,3 +246,4 @@ function addExercise() {
   builder.push(ex);
   newExerciseName.value = "";
   builderPreview.innerHTML
+
