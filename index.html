@@ -34,7 +34,7 @@ h1 {
 
 .card {
   background:#3a3a3a;
-  border-radius:14px;
+  border-radius:16px;
   padding:14px;
   margin-bottom:12px;
 }
@@ -42,7 +42,7 @@ h1 {
 button {
   width:100%;
   padding:14px;
-  border-radius:14px;
+  border-radius:16px;
   border:none;
   background:#444;
   color:#f2c94c;
@@ -52,11 +52,11 @@ button {
 
 button:active { transform:scale(0.98); }
 
-input {
+input, select {
   width:100%;
   padding:12px;
   margin-top:8px;
-  border-radius:12px;
+  border-radius:14px;
   border:none;
   background:#2b2b2b;
   color:#fff;
@@ -83,6 +83,7 @@ input {
 
 <div class="container">
 
+<!-- ACTIVE EXERCISE -->
 <div class="card">
   <div class="highlight">Active Exercise</div>
   <div id="currentExercise">None</div>
@@ -90,29 +91,36 @@ input {
   <div class="small">Set: <span id="setCount">0</span></div>
 </div>
 
+<!-- CUSTOM EXERCISE -->
 <div class="card">
+  <div class="highlight">Change Exercise</div>
   <input id="customExercise" placeholder="Type any exercise">
   <button onclick="setExercise()">Use this exercise</button>
 </div>
 
+<!-- LOG SET -->
 <div class="card">
-  <input id="weight" placeholder="Weight (kg)" type="number">
-  <input id="reps" placeholder="Reps" type="number">
-  <input id="rir" placeholder="RIR" type="number">
+  <div class="highlight">Log Set</div>
+  <input id="weight" type="number" placeholder="Weight (kg)">
+  <input id="reps" type="number" placeholder="Reps">
+  <input id="rir" type="number" placeholder="RIR">
   <button onclick="saveSet()">Save Set</button>
 </div>
 
+<!-- BUILD WORKOUT -->
 <div class="card">
   <div class="highlight">Build Workout</div>
   <input id="workoutName" placeholder="Workout name">
   <input id="workoutExercise" placeholder="Add exercise">
   <button onclick="addToWorkout()">Add Exercise</button>
+  <div id="workoutPreview" class="small" style="margin-top:8px;"></div>
   <button onclick="saveWorkout()">Save Workout</button>
 </div>
 
+<!-- LOAD WORKOUT -->
 <div class="card">
   <div class="highlight">Load Workout</div>
-  <select id="workoutSelect" onchange="loadWorkout()" style="width:100%;padding:12px;border-radius:12px;">
+  <select id="workoutSelect" onchange="loadWorkout()">
     <option value="">Select workout</option>
   </select>
 </div>
@@ -131,15 +139,19 @@ const workouts = JSON.parse(localStorage.getItem("workouts") || "{}");
 function setExercise() {
   const name = document.getElementById("customExercise").value.trim();
   if (!name) return;
+
   currentExercise = name;
   setCount = 0;
+
   document.getElementById("currentExercise").innerText = name;
   document.getElementById("setCount").innerText = "0";
-  document.getElementById("prDisplay").innerText = prs[name] || "—";
+  document.getElementById("prDisplay").innerText =
+    prs[name] ? `${prs[name].weight}kg x ${prs[name].reps}` : "—";
 }
 
 function saveSet() {
   if (!currentExercise) return alert("Select an exercise first");
+
   const w = +weight.value;
   const r = +reps.value;
   if (!w || !r) return;
@@ -154,7 +166,13 @@ function saveSet() {
     localStorage.setItem("prs", JSON.stringify(prs));
   }
 
-  logs[Date.now()] = { exercise:currentExercise, weight:w, reps:r, rir:rir.value };
+  logs[Date.now()] = {
+    exercise: currentExercise,
+    weight: w,
+    reps: r,
+    rir: rir.value
+  };
+
   localStorage.setItem("logs", JSON.stringify(logs));
 
   weight.value = reps.value = rir.value = "";
@@ -163,22 +181,35 @@ function saveSet() {
 function addToWorkout() {
   const ex = document.getElementById("workoutExercise").value.trim();
   if (!ex) return;
+
   workoutBuffer.push(ex);
   document.getElementById("workoutExercise").value = "";
+  renderWorkoutPreview(workoutBuffer);
+}
+
+function renderWorkoutPreview(list) {
+  document.getElementById("workoutPreview").innerHTML =
+    list.map((e,i) => `${i+1}. ${e}`).join("<br>");
 }
 
 function saveWorkout() {
   const name = document.getElementById("workoutName").value.trim();
   if (!name || workoutBuffer.length === 0) return;
-  workouts[name] = workoutBuffer;
+
+  workouts[name] = [...workoutBuffer];
   localStorage.setItem("workouts", JSON.stringify(workouts));
+
   workoutBuffer = [];
+  document.getElementById("workoutName").value = "";
+  document.getElementById("workoutPreview").innerHTML = "";
+
   updateWorkoutSelect();
 }
 
 function updateWorkoutSelect() {
   const sel = document.getElementById("workoutSelect");
   sel.innerHTML = '<option value="">Select workout</option>';
+
   Object.keys(workouts).forEach(w => {
     const o = document.createElement("option");
     o.value = w;
@@ -188,13 +219,18 @@ function updateWorkoutSelect() {
 }
 
 function loadWorkout() {
-  const name = workoutSelect.value;
+  const select = document.getElementById("workoutSelect");
+  const name = select.value;
   if (!name) return;
+
   const exs = workouts[name];
-  if (exs.length) {
-    currentExercise = exs[0];
-    setExercise();
-  }
+  if (!exs || !exs.length) return;
+
+  renderWorkoutPreview(exs);
+
+  currentExercise = exs[0];
+  document.getElementById("customExercise").value = currentExercise;
+  setExercise();
 }
 
 updateWorkoutSelect();
