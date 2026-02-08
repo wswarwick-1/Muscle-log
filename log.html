@@ -1,35 +1,33 @@
-function saveSet(){
-  if(!currentExercise) return;
+<script>
+const logs = JSON.parse(localStorage.getItem("logs")) || [];
+const container = document.getElementById("logContent");
 
-  const w = weight.value;
-  const r = reps.value;
-  if(!w || !r) return;
+if (logs.length === 0) {
+  container.innerHTML = "<p>No logs yet</p>";
+} else {
+  const grouped = {};
 
-  setCount++;
+  logs.forEach(l => {
+    if (!grouped[l.workout]) grouped[l.workout] = {};
+    if (!grouped[l.workout][l.date]) grouped[l.workout][l.date] = [];
+    grouped[l.workout][l.date].push(l);
+  });
 
-  const entry = {
-    date: new Date().toISOString().slice(0,10),
-    workout: workoutSelect.value,
-    exercise: currentExercise,
-    weight: w,
-    reps: r
-  };
+  Object.keys(grouped).forEach(workout => {
+    container.innerHTML += `<h2>${workout}</h2>`;
 
-  logs.push(entry);
-  localStorage.setItem("logs", JSON.stringify(logs));
+    Object.keys(grouped[workout]).reverse().forEach(date => {
+      container.innerHTML += `<div class="card"><strong>${date}</strong>`;
 
-  // PR logic
-  if (!prs[currentExercise] || w > prs[currentExercise].weight) {
-    prs[currentExercise] = { weight: w, reps: r };
-    localStorage.setItem("prs", JSON.stringify(prs));
-  }
+      grouped[workout][date].forEach(l => {
+        container.innerHTML += `
+          <div class="small">
+            ${l.exercise} — ${l.weight}kg × ${l.reps}
+          </div>`;
+      });
 
-  document.getElementById("last").textContent = `${w}kg x ${r}`;
-  document.getElementById("pr").textContent =
-    `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`;
-
-  document.getElementById("setCount").textContent = setCount;
-
-  weight.value = "";
-  reps.value = "";
+      container.innerHTML += `</div>`;
+    });
+  });
 }
+</script>
