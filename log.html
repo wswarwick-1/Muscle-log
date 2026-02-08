@@ -1,38 +1,53 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workout Log</title>
+
+<style>
+body{background:#2f2f2f;color:#fff;font-family:Arial;margin:0}
+header{background:#1f1f1f;padding:14px}
+header a{color:#f2c94c;text-decoration:none;font-weight:bold}
+.container{padding:16px}
+h2{color:#f2c94c}
+.card{background:#3a3a3a;border-radius:12px;padding:12px;margin-bottom:12px}
+.small{opacity:.8}
+</style>
+</head>
+
+<body>
+
+<header>
+<a href="index.html">← Back</a>
+</header>
+
+<div class="container" id="log"></div>
+
 <script>
 const logs = JSON.parse(localStorage.getItem("logs")) || [];
-const box = document.getElementById("logBox");
-
-/*
-Structure:
-date
-  workout
-    sets
-*/
+const out = document.getElementById("log");
 
 const grouped = {};
-
-logs.forEach(l => {
-  if (!grouped[l.date]) grouped[l.date] = {};
-  if (!grouped[l.date][l.workout]) grouped[l.date][l.workout] = [];
-  grouped[l.date][l.workout].push(l);
+logs.forEach(l=>{
+  grouped[l.workout] ??= {};
+  grouped[l.workout][l.date] ??= [];
+  grouped[l.workout][l.date].push(l);
 });
 
-// Render newest days first
-Object.keys(grouped).reverse().forEach(date => {
-  const dayCard = document.createElement("div");
-  dayCard.className = "card";
-
-  let html = `<div class="highlight">${date}</div>`;
-
-  Object.keys(grouped[date]).forEach(workout => {
-    html += `<div style="margin-top:10px;font-weight:600;color:#f2c94c;">${workout}</div>`;
-
-    grouped[date][workout].forEach(l => {
-      html += `<div class="small">• ${l.exercise} — ${l.weight}kg × ${l.reps}</div>`;
+Object.keys(grouped).forEach(workout=>{
+  out.innerHTML += `<h2>${workout}</h2>`;
+  Object.keys(grouped[workout]).reverse().forEach(date=>{
+    out.innerHTML += `<div class="card"><b>${date}</b><br>`;
+    grouped[workout][date].forEach(s=>{
+      out.innerHTML += `
+        <div class="small">
+          ${s.exercise}: ${s.weight}kg x ${s.reps} ${s.rir?`(RIR ${s.rir})`:""}
+        </div>`;
     });
+    out.innerHTML += `</div>`;
   });
-
-  dayCard.innerHTML = html;
-  box.appendChild(dayCard);
 });
 </script>
+</body>
+</html>
