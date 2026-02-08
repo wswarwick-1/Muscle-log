@@ -1,63 +1,181 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Training Log</title>
 
 <style>
-body {
-  background:#2f2f2f;
-  color:#fff;
-  font-family:system-ui;
-  margin:0;
-}
-header {
-  background:#1f1f1f;
-  padding:14px;
-}
-a { color:#f2c94c; text-decoration:none; font-weight:700; }
-.card {
-  background:#3a3a3a;
-  margin:14px;
-  padding:14px;
-  border-radius:14px;
-}
-h2 { color:#f2c94c; }
-.small { opacity:.85; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #2f2f2f;
+    color: #fff;
+  }
+
+  header {
+    background: #1f1f1f;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    color: #f2c94c;
+  }
+
+  header a {
+    color: #f2c94c;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  main {
+    padding: 16px;
+  }
+
+  .workout-group {
+    margin-bottom: 28px;
+  }
+
+  .workout-title {
+    font-size: 22px;
+    color: #f2c94c;
+    margin-bottom: 10px;
+  }
+
+  .log-date {
+    font-size: 14px;
+    color: #aaa;
+    margin: 10px 0;
+  }
+
+  .log-card {
+    background: #3a3a3a;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    position: relative;
+  }
+
+  .exercise {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .meta {
+    font-size: 14px;
+    color: #ccc;
+    margin-top: 4px;
+  }
+
+  .pr-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #f2c94c;
+    color: #000;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+
+  .empty {
+    color: #aaa;
+    text-align: center;
+    margin-top: 40px;
+  }
 </style>
 </head>
 
 <body>
 
 <header>
-  <a href="index.html">← back</a>
+  <h1>Training Log</h1>
+  <a href="index.html">Back</a>
 </header>
 
-<div id="log"></div>
+<main id="logContainer">
+  <!-- Log renders here -->
+</main>
 
 <script>
-const logs = JSON.parse(localStorage.getItem("logs")) || [];
-const out = document.getElementById("log");
+/*
+Expected (flexible) localStorage format:
 
-if(logs.length===0){
-  out.innerHTML="<p style='padding:14px'>No logs yet</p>";
-}else{
-  const grouped = {};
-  logs.forEach(l=>{
-    grouped[l.workout] ??= {};
-    grouped[l.workout][l.date] ??= [];
-    grouped[l.workout][l.date].push(l);
-  });
+log = {
+  "Push": {
+    "2026-02-08": [
+      { exercise, weight, reps, rir, isPR }
+    ]
+  }
+}
 
-  Object.keys(grouped).forEach(workout=>{
-    out.innerHTML += `<h2 style="padding-left:14px">${workout}</h2>`;
-    Object.keys(grouped[workout]).reverse().forEach(date=>{
-      out.innerHTML += `<div class="card"><strong>${date}</strong>`;
-      grouped[workout][date].forEach(l=>{
-        out.innerHTML += `<div class="small">${l.exercise} — ${l.weight}kg x ${l.reps}</div>`;
+This renderer is defensive and won’t crash if fields are missing.
+*/
+
+const container = document.getElementById("logContainer");
+const logData = JSON.parse(localStorage.getItem("log")) || {};
+
+if (Object.keys(logData).length === 0) {
+  container.innerHTML = `<div class="empty">No training logged yet</div>`;
+} else {
+  Object.keys(logData).forEach(workout => {
+    const group = document.createElement("div");
+    group.className = "workout-group";
+
+    const title = document.createElement("div");
+    title.className = "workout-title";
+    title.textContent = workout;
+    group.appendChild(title);
+
+    const dates = logData[workout] || {};
+
+    Object.keys(dates).sort((a,b) => b.localeCompare(a)).forEach(date => {
+      const dateLabel = document.createElement("div");
+      dateLabel.className = "log-date";
+      dateLabel.textContent = date;
+      group.appendChild(dateLabel);
+
+      dates[date].forEach(entry => {
+        const card = document.createElement("div");
+        card.className = "log-card";
+
+        if (entry.isPR) {
+          const pr = document.createElement("div");
+          pr.className = "pr-badge";
+          pr.textContent = "PR";
+          card.appendChild(pr);
+        }
+
+        const ex = document.createElement("div");
+        ex.className = "exercise";
+        ex.textContent = entry.exercise || "Exercise";
+        card.appendChild(ex);
+
+        const meta1 = document.createElement("div");
+        meta1.className = "meta";
+        meta1.textContent =
+          `${entry.weight ?? "-"}kg × ${entry.reps ?? "-"} reps`;
+        card.appendChild(meta1);
+
+        if (entry.rir !== undefined && entry.rir !== "") {
+          const meta2 = document.createElement("div");
+          meta2.className = "meta";
+          meta2.textContent = `RIR ${entry.rir}`;
+          card.appendChild(meta2);
+        }
+
+        group.appendChild(card);
       });
-      out.innerHTML += `</div>`;
     });
+
+    container.appendChild(group);
   });
 }
 </script>
