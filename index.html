@@ -100,7 +100,19 @@ input {
   <select id="workoutSelect" onchange="loadWorkout()"></select>
   <div id="workoutExercises"></div>
 </div>
+<!-- BUILD WORKOUT -->
+<div class="card">
+  <div class="highlight">Build Workout</div>
 
+  <input id="newWorkoutName" placeholder="Workout name">
+
+  <input id="newWorkoutExercise" placeholder="Add exercise">
+  <button onclick="addExerciseToBuilder()">Add Exercise</button>
+
+  <div id="builderPreview" class="small" style="margin-top:8px;"></div>
+
+  <button onclick="saveBuiltWorkout()">Save Workout</button>
+</div>
 <!-- LOG SET -->
 <div class="card">
   <div class="highlight">Log Set</div>
@@ -219,3 +231,30 @@ init();
 
 </body>
 </html>
+
+let builderBuffer = [];
+
+function addExerciseToBuilder(){
+  const ex = document.getElementById("newWorkoutExercise").value.trim();
+  if(!ex) return;
+
+  builderBuffer.push(ex);
+  document.getElementById("newWorkoutExercise").value = "";
+
+  document.getElementById("builderPreview").innerHTML =
+    builderBuffer.map((e,i)=>`${i+1}. ${e}`).join("<br>");
+}
+
+function saveBuiltWorkout(){
+  const name = document.getElementById("newWorkoutName").value.trim();
+  if(!name || builderBuffer.length === 0) return alert("Add name & exercises");
+
+  workouts[name] = [...builderBuffer];
+  localStorage.setItem("workouts", JSON.stringify(workouts));
+
+  builderBuffer = [];
+  document.getElementById("newWorkoutName").value = "";
+  document.getElementById("builderPreview").innerHTML = "";
+
+  init(); // refresh workout dropdown
+}
