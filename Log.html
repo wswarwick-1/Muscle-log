@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workout Log</title>
+
+<style>
+body {
+  background:#2b2b2b;
+  color:#f5f5f5;
+  font-family:Arial, sans-serif;
+  padding:16px;
+}
+
+h1 {
+  text-align:center;
+  color:#f2c94c;
+}
+
+h2 {
+  color:#f2c94c;
+  margin-top:20px;
+}
+
+h3 {
+  margin-top:14px;
+  color:#ddd;
+}
+
+button {
+  width:100%;
+  padding:14px;
+  margin:6px 0 16px 0;
+  background:#3a3a3a;
+  color:#f2c94c;
+  border:1px solid #555;
+  border-radius:10px;
+}
+
+.card {
+  background:#383838;
+  border:1px solid #555;
+  border-radius:12px;
+  padding:12px;
+  margin:8px 0;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Workout Log</h1>
+
+<button onclick="location.href='index.html'">Back to Workout</button>
+
+<div id="log"></div>
+
+<script>
+const logDiv = document.getElementById("log");
+const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+
+/*
+ Expected log shape:
+ {
+   date: "YYYY-MM-DD",
+   day: "A" | "B",
+   exercise: string,
+   weight: string,
+   reps: string,
+   rir: string
+ }
+*/
+
+// Group logs by Day → Date
+const grouped = {};
+
+logs.forEach(entry => {
+  const day = entry.day || "Unknown";
+  const date = entry.date || "Unknown date";
+
+  if(!grouped[day]) grouped[day] = {};
+  if(!grouped[day][date]) grouped[day][date] = [];
+
+  grouped[day][date].push(entry);
+});
+
+// Render
+if(logs.length === 0){
+  logDiv.innerHTML = "<p>No logs yet.</p>";
+} else {
+  Object.keys(grouped).sort().forEach(day => {
+    const dayTitle = document.createElement("h2");
+    dayTitle.innerText = day === "A" ? "Day A – Heavy" : "Day B – Volume";
+    logDiv.appendChild(dayTitle);
+
+    Object.keys(grouped[day]).sort().reverse().forEach(date => {
+      const dateTitle = document.createElement("h3");
+      dateTitle.innerText = date;
+      logDiv.appendChild(dateTitle);
+
+      grouped[day][date].forEach(e => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <strong>${e.exercise}</strong><br>
+          ${e.weight}kg × ${e.reps} reps
+          ${e.rir ? `(RIR ${e.rir})` : ""}
+        `;
+        logDiv.appendChild(card);
+      });
+    });
+  });
+}
+</script>
+
+</body>
+</html>
