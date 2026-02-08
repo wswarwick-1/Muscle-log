@@ -248,8 +248,19 @@ document.getElementById("startTimerBtn").onclick = () => {
   timerInterval = setInterval(()=>{
     t--;
     updateTimer(t);
-    if (t <= 0) clearInterval(timerInterval);
-  },1000);
+    if (t <= 0) {
+  clearInterval(timerInterval);
+
+  // 📳 VIBRATE (if supported)
+  if (navigator.vibrate) {
+    navigator.vibrate([300, 150, 300]);
+  }
+
+  // 🔔 BEEP
+  const beep = document.getElementById("beep");
+  beep.currentTime = 0;
+  beep.play().catch(() => {});
+    }
 };
 document.getElementById("resetTimerBtn").onclick = () => {
   clearInterval(timerInterval);
@@ -292,8 +303,11 @@ document.getElementById("saveWorkoutBtn").onclick = () => {
     : "Last time: —";
   }
 </script>
-
+<audio id="beep">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=" type="audio/wav">
+</audio>
 </body>
 </html>
+
 
 
