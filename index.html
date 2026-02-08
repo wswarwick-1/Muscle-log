@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Muscle Log</title>
 
-
 <style>
 :root {
   --bg:#2f2f2f;
@@ -16,9 +15,7 @@
   --border:#4a4a4a;
 }
 
-* {
-  box-sizing:border-box;
-}
+* { box-sizing:border-box; }
 
 body {
   margin:0;
@@ -32,20 +29,7 @@ h1 {
   text-align:center;
   color:var(--accent);
   font-weight:600;
-  letter-spacing:0.4px;
-  margin-bottom:20px;
-}
-
-h2 {
-  color:var(--accent);
-  font-weight:600;
-  margin:18px 0 6px;
-}
-
-h3 {
-  color:var(--muted);
-  font-weight:500;
-  margin:10px 0;
+  margin-bottom:18px;
 }
 
 button {
@@ -60,9 +44,7 @@ button {
   font-weight:500;
 }
 
-button:active {
-  transform:scale(0.98);
-}
+button:active { transform:scale(0.98); }
 
 .exercise.active {
   background:var(--accent);
@@ -89,9 +71,7 @@ input {
   font-size:15px;
 }
 
-input::placeholder {
-  color:#9a9a9a;
-}
+input::placeholder { color:#9a9a9a; }
 
 .timer {
   font-size:34px;
@@ -105,7 +85,11 @@ input::placeholder {
   font-size:14px;
   padding:10px 0;
   border-bottom:1px solid var(--border);
-  line-height:1.4;
+}
+
+.small {
+  font-size:12px;
+  color:var(--accent);
 }
 </style>
 </head>
@@ -113,20 +97,21 @@ input::placeholder {
 <body>
 
 <h1>Muscle Log</h1>
-  <button onclick="location.href='log.html'">View Log</button>
 
-<button id="dayA">Day A – Heavy</button>
-<button id="dayB">Day B – Volume</button>
+<button onclick="location.href='./log.html'">View Log</button>
+
+<button onclick="loadDay('A')">Day A – Heavy</button>
+<button onclick="loadDay('B')">Day B – Volume</button>
 
 <div class="card" id="status">No exercise selected</div>
 <div class="card" id="sets">Set: 0</div>
 
-<button id="changeExercise">Change Exercise</button>
+<button onclick="changeExercise()">Change Exercise</button>
 
 <div class="card">
   <div class="small">Custom exercise</div>
   <input id="customExercise" placeholder="Type any exercise">
-  <button id="useCustom">Use this exercise</button>
+  <button onclick="useCustomExercise()">Use this exercise</button>
 </div>
 
 <div id="exerciseList"></div>
@@ -135,40 +120,20 @@ input::placeholder {
 <input id="reps" placeholder="Reps">
 <input id="rir" placeholder="RIR">
 
-<button id="saveSet">Save Set</button>
+<button onclick="saveSet()">Save Set</button>
 
 <div class="card">
-  <h2>Rest Timer</h2>
   <div class="small">Rest time (seconds)</div>
   <input id="restInput" type="number" value="60">
   <div class="timer" id="timer">01:00</div>
-  <button id="startTimer">Start</button>
-  <button id="resetTimer">Reset</button>
-</div>
-
-<div class="card">
-  <h2>Log</h2>
-  <div id="log"></div>
+  <button onclick="startTimer()">Start</button>
+  <button onclick="resetTimer()">Reset</button>
 </div>
 
 <script>
-/* ELEMENTS */
-const statusDiv = document.getElementById("status");
-const setsDiv = document.getElementById("sets");
-const exerciseList = document.getElementById("exerciseList");
-const logDiv = document.getElementById("log");
-
-const customInput = document.getElementById("customExercise");
-const restInput = document.getElementById("restInput");
-const timerDisplay = document.getElementById("timer");
-
-const weightInput = document.getElementById("weight");
-const repsInput = document.getElementById("reps");
-const rirInput = document.getElementById("rir");
-
 /* DATA */
 const workouts = {
-  A:["Goblet Squat","RDL","Push-Ups","OHP","Row","Pull-ups"],
+  A:["Goblet Squat","RDL","Bench press","OHP","Row","Pull-ups"],
   B:["Split Squat","DB RDL","DB Press","Lateral Raise","Curl","Triceps"]
 };
 
@@ -177,7 +142,20 @@ let currentExercise = "";
 let setCount = 0;
 let timer = 60;
 let interval = null;
+
 let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+let prs  = JSON.parse(localStorage.getItem("prs")  || "{}");
+
+/* ELEMENTS */
+const statusDiv = document.getElementById("status");
+const setsDiv = document.getElementById("sets");
+const exerciseList = document.getElementById("exerciseList");
+const weightInput = document.getElementById("weight");
+const repsInput = document.getElementById("reps");
+const rirInput = document.getElementById("rir");
+const restInput = document.getElementById("restInput");
+const timerDisplay = document.getElementById("timer");
+const customInput = document.getElementById("customExercise");
 
 /* LOAD DAY */
 function loadDay(day){
@@ -190,8 +168,12 @@ function loadDay(day){
 
   workouts[day].forEach(name=>{
     const btn = document.createElement("button");
-    btn.innerText = name;
     btn.className = "exercise";
+    const pr = prs[name];
+    btn.innerHTML = pr
+      ? `${name}<br><span class="small">PR: ${pr.weight}kg × ${pr.reps}</span>`
+      : name;
+
     btn.onclick = () => selectExercise(name, btn);
     exerciseList.appendChild(btn);
   });
@@ -204,20 +186,28 @@ function selectExercise(name, btn){
   currentExercise = name;
   setCount = 0;
   setsDiv.innerText = "Set: 0";
-  statusDiv.innerText = "Selected: " + name;
+  updateStatusPR();
 }
 
 /* CUSTOM EXERCISE */
 function useCustomExercise(){
   const name = customInput.value.trim();
-  if(!name) return alert("Enter exercise name");
+  if(!name) return;
 
   document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
   currentExercise = name;
   setCount = 0;
   setsDiv.innerText = "Set: 0";
-  statusDiv.innerText = "Selected: " + name;
+  updateStatusPR();
   customInput.value = "";
+}
+
+/* STATUS + PR */
+function updateStatusPR(){
+  const pr = prs[currentExercise];
+  statusDiv.innerHTML = pr
+    ? `Selected: ${currentExercise}<br><span class="small">PR: ${pr.weight}kg × ${pr.reps}</span>`
+    : `Selected: ${currentExercise}`;
 }
 
 /* CHANGE EXERCISE */
@@ -227,7 +217,12 @@ function changeExercise(){
 
 /* SAVE SET */
 function saveSet(){
-  if(!currentExercise) return alert("Select an exercise first");
+  if(!currentExercise) return alert("Select an exercise");
+
+  const weight = parseFloat(weightInput.value);
+  const reps = parseInt(repsInput.value);
+
+  if(isNaN(weight) || isNaN(reps)) return alert("Enter weight and reps");
 
   setCount++;
   setsDiv.innerText = "Set: " + setCount;
@@ -236,21 +231,21 @@ function saveSet(){
     date:new Date().toISOString().split("T")[0],
     day:currentDay,
     exercise:currentExercise,
-    weight:weightInput.value,
-    reps:repsInput.value,
+    weight,
+    reps,
     rir:rirInput.value
   });
 
-  localStorage.setItem("logs", JSON.stringify(logs));
-  drawLog();
-}
+  const score = weight * reps;
+  const pr = prs[currentExercise];
 
-/* DRAW LOG */
-function drawLog(){
-  logDiv.innerHTML = "";
-  logs.slice().reverse().forEach(e=>{
-    logDiv.innerHTML += `<div class="log">${e.day} – ${e.exercise} — ${e.weight}kg × ${e.reps}</div>`;
-  });
+  if(!pr || score > pr.weight * pr.reps){
+    prs[currentExercise] = { weight, reps };
+    localStorage.setItem("prs", JSON.stringify(prs));
+  }
+
+  localStorage.setItem("logs", JSON.stringify(logs));
+  updateStatusPR();
 }
 
 /* TIMER */
@@ -258,7 +253,6 @@ function startTimer(){
   if(interval) return;
   timer = parseInt(restInput.value) || 60;
   updateTimer();
-
   interval = setInterval(()=>{
     timer--;
     updateTimer();
@@ -281,24 +275,10 @@ function updateTimer(){
   timerDisplay.innerText = "00:" + String(timer).padStart(2,"0");
 }
 
-/* BUTTON WIRING */
-document.getElementById("dayA").onclick = () => loadDay("A");
-document.getElementById("dayB").onclick = () => loadDay("B");
-document.getElementById("useCustom").onclick = useCustomExercise;
-document.getElementById("changeExercise").onclick = changeExercise;
-document.getElementById("saveSet").onclick = saveSet;
-document.getElementById("startTimer").onclick = startTimer;
-document.getElementById("resetTimer").onclick = resetTimer;
-
 /* INIT */
 loadDay("A");
-drawLog();
 updateTimer();
 </script>
 
 </body>
 </html>
-
-
-
-
