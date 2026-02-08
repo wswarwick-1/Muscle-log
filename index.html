@@ -21,8 +21,8 @@ input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; bor
 
 <h1>Muscle Log</h1>
 
-<button onclick="load('A')">Day A – Heavy</button>
-<button onclick="load('B')">Day B – Volume</button>
+<button onclick="loadDay('A')">Day A – Heavy</button>
+<button onclick="loadDay('B')">Day B – Volume</button>
 
 <div class="card" id="status">No exercise selected</div>
 <div class="card" id="sets">Set: 0</div>
@@ -35,18 +35,154 @@ input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; bor
 <input id="r" placeholder="Reps">
 <input id="rir" placeholder="RIR">
 
-<button onclick="save()">Save Set</button>
+<button onclick="saveSet()">Save Set</button>
 
 <div class="card">
   <h2>Rest Timer</h2>
-
   <div class="small">Rest time (seconds)</div>
   <input id="restInput" type="number" min="10" step="10">
-
-  <div class="timer" id="t">01:00</div>
-  <button onclick="start()">Start</button>
-  <button onclick="reset()">Reset</button>
+  <div class="timer" id="timer">01:00</div>
+  <button onclick="startTimer()">Start</button>
+  <button onclick="resetTimer()">Reset</button>
 </div>
 
 <div class="card">
   <h2>Log</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+/* DOM REFERENCES (CRITICAL FIX) */
+const exercisesDiv = document.getElementById("exercises");
+const statusDiv = document.getElementById("status");
+const setsDiv = document.getElementById("sets");
+const logDiv = document.getElementById("log");
+const restInput = document.getElementById("restInput");
+const timerDisplay = document.getElementById("timer");
+const w = document.getElementById("w");
+const r = document.getElementById("r");
+const rir = document.getElementById("rir");
+
+/* DATA */
+const workouts = {
+  A:["Goblet Squat","RDL","Push-Ups","OHP","Row","Pull-ups"],
+  B:["Split Squat","DB RDL","DB Press","Lateral Raise","Curl","Triceps"]
+};
+
+let currentExercise = "";
+let currentDay = "A";
+let setCount = 0;
+let timer = 60;
+let interval = null;
+let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+
+/* REST TIMER PREF */
+const savedRest = parseInt(localStorage.getItem("restTime")) || 60;
+restInput.value = savedRest;
+timer = savedRest;
+updateTimer();
+
+/* LOAD DAY */
+function loadDay(day){
+  currentDay = day;
+  exercisesDiv.innerHTML = "";
+  currentExercise = "";
+  setCount = 0;
+  setsDiv.innerText = "Set: 0";
+  statusDiv.innerText = "No exercise selected";
+
+  workouts[day].forEach(name=>{
+    const btn = document.createElement("button");
+    btn.innerText = name;
+    btn.className = "exercise";
+    btn.onclick = ()=>selectExercise(name, btn);
+    exercisesDiv.appendChild(btn);
+  });
+}
+
+/* SELECT EXERCISE */
+function selectExercise(name, btn){
+  document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  currentExercise = name;
+  setCount = 0;
+  setsDiv.innerText = "Set: 0";
+  statusDiv.innerText = "Selected: " + name;
+}
+
+/* CHANGE EXERCISE */
+function changeExercise(){
+  currentExercise = "";
+  setCount = 0;
+  setsDiv.innerText = "Set: 0";
+  statusDiv.innerText = "No exercise selected";
+  document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
+}
+
+/* SAVE SET */
+function saveSet(){
+  if(!currentExercise){
+    alert("Select an exercise first");
+    return;
+  }
+
+  setCount++;
+  setsDiv.innerText = "Set: " + setCount;
+
+  logs.push({
+    date:new Date().toISOString().split("T")[0],
+    day:currentDay,
+    exercise:currentExercise,
+    weight:w.value,
+    reps:r.value,
+    rir:rir.value
+  });
+
+  localStorage.setItem("logs", JSON.stringify(logs));
+  drawLog();
+}
+
+/* DRAW LOG */
+function drawLog(){
+  logDiv.innerHTML = "";
+  logs.slice().reverse().forEach(e=>{
+    logDiv.innerHTML += `<div class="log">${e.day} – ${e.exercise} — ${e.weight}kg × ${e.reps}</div>`;
+  });
+}
+
+/* TIMER */
+function startTimer(){
+  if(interval) return;
+  timer = parseInt(restInput.value) || 60;
+  localStorage.setItem("restTime", timer);
+  updateTimer();
+
+  interval = setInterval(()=>{
+    timer--;
+    updateTimer();
+    if(timer <= 0){
+      clearInterval(interval);
+      interval = null;
+      if(navigator.vibrate) navigator.vibrate([300,150,300]);
+    }
+  },1000);
+}
+
+function resetTimer(){
+  clearInterval(interval);
+  interval = null;
+  timer = parseInt(restInput.value) || 60;
+  updateTimer();
+}
+
+function updateTimer(){
+  timerDisplay.innerText = "00:" + String(timer).padStart(2,"0");
+}
+
+/* INIT */
+loadDay("A");
+drawLog();
+</script>
+
+</body>
+</html>
