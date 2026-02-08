@@ -1,81 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Training Log</title>
 
 <style>
-:root {
-  --bg:#2f2f2f;
-  --card:#3a3a3a;
-  --accent:#f2c94c;
-  --text:#fff;
-}
-
 body {
-  margin:0;
+  background:#2f2f2f;
+  color:#fff;
   font-family:system-ui;
-  background:var(--bg);
-  color:var(--text);
+  margin:0;
 }
-
 header {
   background:#1f1f1f;
-  padding:14px 16px;
+  padding:14px;
   display:flex;
   justify-content:space-between;
+}
+header span {
+  color:#f2c94c;
   font-weight:700;
-  text-transform:lowercase;
 }
-
-h1 {
-  text-align:center;
-  color:var(--accent);
-  margin:20px 0;
-}
+a { color:#f2c94c; text-decoration:none; }
 
 .card {
-  background:var(--card);
-  border-radius:16px;
-  padding:16px;
-  margin:12px;
+  background:#3a3a3a;
+  margin:14px;
+  padding:14px;
+  border-radius:14px;
 }
 
 label {
-  color:var(--accent);
+  color:#f2c94c;
   font-weight:600;
-  display:block;
-  margin-bottom:6px;
 }
 
 select,input,button {
   width:100%;
-  padding:14px;
-  border-radius:12px;
+  padding:12px;
+  margin-top:8px;
+  border-radius:10px;
   border:none;
   font-size:16px;
-  margin-top:6px;
-}
-
-select,input {
   background:#222;
   color:#fff;
 }
 
 button {
   background:#444;
-  color:var(--accent);
+  color:#f2c94c;
   font-weight:700;
 }
 
 .timer {
-  font-size:36px;
+  font-size:32px;
   text-align:center;
-  margin:12px 0;
+  margin:10px 0;
 }
-
-.hidden { display:none; }
 </style>
 </head>
 
@@ -83,10 +64,8 @@ button {
 
 <header>
   <span>training log</span>
-  <span onclick="toggleLog()">log</span>
+  <a href="log.html">log</a>
 </header>
-
-<h1>Training Log</h1>
 
 <div class="card">
   <label>Current Exercise</label>
@@ -123,162 +102,158 @@ button {
   <button onclick="resetTimer()">Reset</button>
 </div>
 
-<!-- CUSTOM WORKOUT BUILDER -->
 <div class="card">
   <label>Create Custom Workout</label>
   <input id="newWorkoutName" placeholder="Workout name">
-  <input id="newWorkoutExercise" placeholder="Exercise name">
-  <button onclick="addExerciseToBuilder()">Add Exercise</button>
-  <div id="builderPreview"></div>
-  <button onclick="saveCustomWorkout()">Save Workout</button>
+  <input id="newExercise" placeholder="Exercise name">
+  <button onclick="addExercise()">Add Exercise</button>
+  <div id="builder"></div>
+  <button onclick="saveWorkout()">Save Workout</button>
 </div>
 
-<!-- LOG PAGE -->
-<div id="logPage" class="hidden">
-  <h1>Workout Log</h1>
-  <div id="logContent"></div>
-</div>
+<audio id="beep">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=">
+</audio>
 
 <script>
 /* ---------- DATA ---------- */
 let workouts = JSON.parse(localStorage.getItem("workouts")) || {
-  Push:["Bench Press","OHP","Incline DB Press","Dips"],
-  Pull:["Pull-up","Row","Lat Pulldown","RDL"],
-  Legs:["Squat","Hack Squat","Leg Press","Ham Curl"]
+  Push:["Bench Press","OHP","Dips"],
+  Pull:["Row","Pull-up","Lat Pulldown"],
+  Legs:["Squat","RDL","Leg Press"]
 };
 
-let logs = JSON.parse(localStorage.getItem("logs")||"{}");
-let prs  = JSON.parse(localStorage.getItem("prs")||"{}");
+let logs = JSON.parse(localStorage.getItem("logs")) || [];
+let prs  = JSON.parse(localStorage.getItem("prs")) || {};
 
-/* ---------- STATE ---------- */
-let currentExercise=null;
-let setCount=0;
-let builderBuffer=[];
+localStorage.setItem("workouts", JSON.stringify(workouts));
 
-/* ---------- ELEMENTS ---------- */
-const workoutSelect=document.getElementById("workoutSelect");
-const exerciseSelect=document.getElementById("exerciseSelect");
+let currentWorkout = null;
+let currentExercise = null;
+let setCount = 0;
+let builderBuffer = [];
 
 /* ---------- INIT ---------- */
-function init(){
-  workoutSelect.innerHTML="";
+const workoutSelect = document.getElementById("workoutSelect");
+const exerciseSelect = document.getElementById("exerciseSelect");
+
+function init() {
+  workoutSelect.innerHTML = "<option value=''>Select workout</option>";
   Object.keys(workouts).forEach(w=>{
-    workoutSelect.innerHTML+=`<option>${w}</option>`;
+    workoutSelect.innerHTML += `<option>${w}</option>`;
   });
-  loadExercises();
 }
 init();
 
-/* ---------- WORKOUT / EXERCISES ---------- */
-function loadExercises(){
-  exerciseSelect.innerHTML="";
-  workouts[workoutSelect.value].forEach(e=>{
-    exerciseSelect.innerHTML+=`<option>${e}</option>`;
+/* ---------- WORKOUT ---------- */
+workoutSelect.onchange = () => {
+  currentWorkout = workoutSelect.value;
+  exerciseSelect.innerHTML = "<option value=''>Select exercise</option>";
+  workouts[currentWorkout].forEach(e=>{
+    exerciseSelect.innerHTML += `<option>${e}</option>`;
   });
-  selectExercise();
-}
+};
 
-function selectExercise(){
-  currentExercise=exerciseSelect.value;
-  setCount=0;
-  document.getElementById("currentExercise").textContent=currentExercise;
-  document.getElementById("setCount").textContent=0;
-  document.getElementById("pr").textContent=prs[currentExercise]||"—";
-  document.getElementById("last").textContent=
-    logs[currentExercise]?.slice(-1)[0]||"—";
-}
+exerciseSelect.onchange = () => {
+  setExercise(exerciseSelect.value);
+};
 
 function useCustomExercise(){
-  const val=document.getElementById("customExercise").value;
-  if(!val) return;
-  currentExercise=val;
-  document.getElementById("currentExercise").textContent=val;
+  const ex = customExercise.value.trim();
+  if(!ex) return;
+  setExercise(ex);
+  customExercise.value="";
 }
 
-/* ---------- LOGGING ---------- */
+function setExercise(ex){
+  currentExercise = ex;
+  setCount = 0;
+  document.getElementById("currentExercise").innerText = ex;
+  document.getElementById("setCount").innerText = "0";
+
+  const last = logs.filter(l=>l.exercise===ex).slice(-1)[0];
+  document.getElementById("last").innerText =
+    last ? `${last.weight}kg x ${last.reps}` : "—";
+
+  const pr = prs[ex];
+  document.getElementById("pr").innerText =
+    pr ? `${pr.weight}kg x ${pr.reps}` : "—";
+}
+
+/* ---------- LOG SET ---------- */
 function saveSet(){
-  if(!currentExercise) return;
-  const w=weight.value;
-  const r=reps.value;
-  if(!w||!r) return;
+  if(!currentWorkout || !currentExercise) return alert("Select workout & exercise");
 
-  const entry=`${w}kg x ${r}`;
-  logs[currentExercise]=logs[currentExercise]||[];
-  logs[currentExercise].push(entry);
+  const w = +weight.value;
+  const r = +reps.value;
+  if(!w || !r) return;
 
-  if(!prs[currentExercise] || parseInt(w)>parseInt(prs[currentExercise])){
-    prs[currentExercise]=entry;
+  setCount++;
+  document.getElementById("setCount").innerText = setCount;
+
+  const entry = {
+    date:new Date().toISOString().slice(0,10),
+    workout:currentWorkout,
+    exercise:currentExercise,
+    weight:w,
+    reps:r
+  };
+
+  logs.push(entry);
+  localStorage.setItem("logs", JSON.stringify(logs));
+
+  if(!prs[currentExercise] || w > prs[currentExercise].weight){
+    prs[currentExercise] = {weight:w,reps:r};
+    localStorage.setItem("prs", JSON.stringify(prs));
   }
 
-  localStorage.setItem("logs",JSON.stringify(logs));
-  localStorage.setItem("prs",JSON.stringify(prs));
+  document.getElementById("last").innerText = `${w}kg x ${r}`;
+  document.getElementById("pr").innerText =
+    `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`;
 
-  document.getElementById("last").textContent=entry;
-  document.getElementById("pr").textContent=prs[currentExercise];
-  document.getElementById("setCount").textContent=++setCount;
+  weight.value = reps.value = "";
 }
 
 /* ---------- TIMER ---------- */
-let timerInt;
+let tInt;
 function startTimer(){
-  let t=parseInt(restInput.value);
-  clearInterval(timerInt);
-  timerInt=setInterval(()=>{
-    timer.textContent=
-      String(Math.floor(t/60)).padStart(2,"0")+":"+
-      String(t%60).padStart(2,"0");
-    if(--t<0){
-      clearInterval(timerInt);
-      navigator.vibrate?.(500);
-      new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
+  let t = +restInput.value;
+  clearInterval(tInt);
+  updateTimer(t);
+  tInt = setInterval(()=>{
+    t--;
+    updateTimer(t);
+    if(t<=0){
+      clearInterval(tInt);
+      navigator.vibrate?.(300);
+      beep.play().catch(()=>{});
     }
   },1000);
 }
 function resetTimer(){
-  clearInterval(timerInt);
-  timer.textContent="00:00";
+  clearInterval(tInt);
+  timer.innerText="00:00";
+}
+function updateTimer(t){
+  timer.innerText =
+    String(Math.floor(t/60)).padStart(2,"0")+":"+
+    String(t%60).padStart(2,"0");
 }
 
-/* ---------- CUSTOM WORKOUT BUILDER ---------- */
-function addExerciseToBuilder(){
-  const ex=document.getElementById("newWorkoutExercise").value;
+/* ---------- CUSTOM WORKOUT ---------- */
+function addExercise(){
+  const ex = newExercise.value.trim();
   if(!ex) return;
   builderBuffer.push(ex);
-  document.getElementById("newWorkoutExercise").value="";
-  document.getElementById("builderPreview").innerHTML=
-    builderBuffer.map((e,i)=>`${i+1}. ${e}`).join("<br>");
+  newExercise.value="";
+  builder.innerHTML = builderBuffer.join("<br>");
 }
 
-function saveCustomWorkout(){
-  const name=document.getElementById("newWorkoutName").value;
-  if(!name||builderBuffer.length===0) return alert("Add name & exercises");
-  workouts[name]=[...builderBuffer];
-  localStorage.setItem("workouts",JSON.stringify(workouts));
+function saveWorkout(){
+  const name = newWorkoutName.value.trim();
+  if(!name || builderBuffer.length===0) return;
+  workouts[name] = [...builderBuffer];
+  localStorage.setItem("workouts", JSON.stringify(workouts));
   builderBuffer=[];
-  document.getElementById("builderPreview").innerHTML="";
-  document.getElementById("newWorkoutName").value="";
-  init();
-}
-
-/* ---------- LOG PAGE ---------- */
-function toggleLog(){
-  logPage.classList.toggle("hidden");
-  logContent.innerHTML="";
-  Object.keys(workouts).forEach(w=>{
-    logContent.innerHTML+=`<h2>${w}</h2>`;
-    workouts[w].forEach(e=>{
-      if(logs[e]){
-        logs[e].forEach(l=>{
-          logContent.innerHTML+=`<div class="card">${e}: ${l}</div>`;
-        });
-      }
-    });
-  });
-}
-
-workoutSelect.onchange=loadExercises;
-exerciseSelect.onchange=selectExercise;
-</script>
-
-</body>
-</html>
+  newWorkoutName.value="";
+  builder.innerHTML
