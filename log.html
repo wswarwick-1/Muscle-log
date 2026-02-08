@@ -1,33 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Log</title>
+
+<style>
+body {
+  background:#2f2f2f;
+  color:#fff;
+  font-family:system-ui;
+  margin:0;
+}
+header {
+  background:#1f1f1f;
+  padding:14px;
+}
+a { color:#f2c94c; text-decoration:none; font-weight:700; }
+.card {
+  background:#3a3a3a;
+  margin:14px;
+  padding:14px;
+  border-radius:14px;
+}
+h2 { color:#f2c94c; }
+.small { opacity:.85; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <a href="index.html">← back</a>
+</header>
+
+<div id="log"></div>
+
 <script>
 const logs = JSON.parse(localStorage.getItem("logs")) || [];
-const container = document.getElementById("logContent");
+const out = document.getElementById("log");
 
-if (logs.length === 0) {
-  container.innerHTML = "<p>No logs yet</p>";
-} else {
+if(logs.length===0){
+  out.innerHTML="<p style='padding:14px'>No logs yet</p>";
+}else{
   const grouped = {};
-
-  logs.forEach(l => {
-    if (!grouped[l.workout]) grouped[l.workout] = {};
-    if (!grouped[l.workout][l.date]) grouped[l.workout][l.date] = [];
+  logs.forEach(l=>{
+    grouped[l.workout] ??= {};
+    grouped[l.workout][l.date] ??= [];
     grouped[l.workout][l.date].push(l);
   });
 
-  Object.keys(grouped).forEach(workout => {
-    container.innerHTML += `<h2>${workout}</h2>`;
-
-    Object.keys(grouped[workout]).reverse().forEach(date => {
-      container.innerHTML += `<div class="card"><strong>${date}</strong>`;
-
-      grouped[workout][date].forEach(l => {
-        container.innerHTML += `
-          <div class="small">
-            ${l.exercise} — ${l.weight}kg × ${l.reps}
-          </div>`;
+  Object.keys(grouped).forEach(workout=>{
+    out.innerHTML += `<h2 style="padding-left:14px">${workout}</h2>`;
+    Object.keys(grouped[workout]).reverse().forEach(date=>{
+      out.innerHTML += `<div class="card"><strong>${date}</strong>`;
+      grouped[workout][date].forEach(l=>{
+        out.innerHTML += `<div class="small">${l.exercise} — ${l.weight}kg x ${l.reps}</div>`;
       });
-
-      container.innerHTML += `</div>`;
+      out.innerHTML += `</div>`;
     });
   });
 }
 </script>
+
+</body>
+</html>
