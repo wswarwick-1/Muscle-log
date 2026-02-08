@@ -126,6 +126,21 @@ function useCustomExercise(){
   }
 
   // Clear preset highlights
+  document.querySelectorAll(".exercise")
+    .forEach(b => b.classList.remove("active"));
+
+  // 🔑 USE THE SAME STATE AS PRESETS
+  currentExercise = name;
+  setCount = 0;
+
+  setsDiv.innerText = "Set: 0";
+  statusDiv.innerText = "Selected: " + name;
+
+  // Clear input after selection
+  input.value = "";
+}
+
+  // Clear preset highlights
   document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
 
   currentExercise = name;
@@ -215,6 +230,7 @@ drawLog();
 
 </body>
 </html>
+
 
 
 
