@@ -1,53 +1,35 @@
+function saveSet(){
+  if(!currentExercise) return;
 
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Workout Log</title>
+  const w = weight.value;
+  const r = reps.value;
+  if(!w || !r) return;
 
-<style>
-body{background:#2f2f2f;color:#fff;font-family:Arial;margin:0}
-header{background:#1f1f1f;padding:14px}
-header a{color:#f2c94c;text-decoration:none;font-weight:bold}
-.container{padding:16px}
-h2{color:#f2c94c}
-.card{background:#3a3a3a;border-radius:12px;padding:12px;margin-bottom:12px}
-.small{opacity:.8}
-</style>
-</head>
+  setCount++;
 
-<body>
+  const entry = {
+    date: new Date().toISOString().slice(0,10),
+    workout: workoutSelect.value,
+    exercise: currentExercise,
+    weight: w,
+    reps: r
+  };
 
-<header>
-<a href="index.html">← Back</a>
-</header>
+  logs.push(entry);
+  localStorage.setItem("logs", JSON.stringify(logs));
 
-<div class="container" id="log"></div>
+  // PR logic
+  if (!prs[currentExercise] || w > prs[currentExercise].weight) {
+    prs[currentExercise] = { weight: w, reps: r };
+    localStorage.setItem("prs", JSON.stringify(prs));
+  }
 
-<script>
-const logs = JSON.parse(localStorage.getItem("logs")) || [];
-const out = document.getElementById("log");
+  document.getElementById("last").textContent = `${w}kg x ${r}`;
+  document.getElementById("pr").textContent =
+    `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`;
 
-const grouped = {};
-logs.forEach(l=>{
-  grouped[l.workout] ??= {};
-  grouped[l.workout][l.date] ??= [];
-  grouped[l.workout][l.date].push(l);
-});
+  document.getElementById("setCount").textContent = setCount;
 
-Object.keys(grouped).forEach(workout=>{
-  out.innerHTML += `<h2>${workout}</h2>`;
-  Object.keys(grouped[workout]).reverse().forEach(date=>{
-    out.innerHTML += `<div class="card"><b>${date}</b><br>`;
-    grouped[workout][date].forEach(s=>{
-      out.innerHTML += `
-        <div class="small">
-          ${s.exercise}: ${s.weight}kg x ${s.reps} ${s.rir?`(RIR ${s.rir})`:""}
-        </div>`;
-    });
-    out.innerHTML += `</div>`;
-  });
-});
-</script>
-</body>
-</html>
+  weight.value = "";
+  reps.value = "";
+}
