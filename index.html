@@ -5,58 +5,18 @@
 <title>Training Log</title>
 
 <style>
-body {
-  background:#2f2f2f;
-  color:#fff;
-  font-family:system-ui;
-  margin:0;
-}
-header {
-  background:#1f1f1f;
-  padding:14px;
-  display:flex;
-  justify-content:space-between;
-}
-header span {
-  color:#f2c94c;
-  font-weight:700;
-}
-a { color:#f2c94c; text-decoration:none; }
-
-.card {
-  background:#3a3a3a;
-  margin:14px;
-  padding:14px;
-  border-radius:14px;
-}
-
-label {
-  color:#f2c94c;
-  font-weight:600;
-}
-
+body { background:#2f2f2f; color:#fff; font-family:system-ui; margin:0 }
+header { background:#1f1f1f; padding:14px; display:flex; justify-content:space-between }
+header span,a { color:#f2c94c; font-weight:700; text-decoration:none }
+.card { background:#3a3a3a; margin:14px; padding:14px; border-radius:14px }
+label { color:#f2c94c; font-weight:600 }
 select,input,button {
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:10px;
-  border:none;
-  font-size:16px;
-  background:#222;
-  color:#fff;
+  width:100%; padding:12px; margin-top:8px;
+  border-radius:10px; border:none; font-size:16px;
+  background:#222; color:#fff
 }
-
-button {
-  background:#444;
-  color:#f2c94c;
-  font-weight:700;
-}
-
-.timer {
-  font-size:32px;
-  text-align:center;
-  margin:10px 0;
-}
+button { background:#444; color:#f2c94c; font-weight:700 }
+.timer { font-size:32px; text-align:center; margin:10px 0 }
 </style>
 </head>
 
@@ -116,47 +76,51 @@ button {
 </audio>
 
 <script>
-/* ---------- DATA ---------- */
-let workouts = JSON.parse(localStorage.getItem("workouts")) || {
+/* ---------- SAFE INITIALISATION ---------- */
+const DEFAULT_WORKOUTS = {
   Push:["Bench Press","OHP","Dips"],
   Pull:["Row","Pull-up","Lat Pulldown"],
   Legs:["Squat","RDL","Leg Press"]
 };
 
+let workouts = JSON.parse(localStorage.getItem("workouts"));
+if (!workouts) {
+  workouts = DEFAULT_WORKOUTS;
+  localStorage.setItem("workouts", JSON.stringify(workouts));
+}
+
 let logs = JSON.parse(localStorage.getItem("logs")) || [];
 let prs  = JSON.parse(localStorage.getItem("prs")) || {};
-
-localStorage.setItem("workouts", JSON.stringify(workouts));
 
 let currentWorkout = null;
 let currentExercise = null;
 let setCount = 0;
 let builderBuffer = [];
 
-/* ---------- INIT ---------- */
+/* ---------- ELEMENTS ---------- */
 const workoutSelect = document.getElementById("workoutSelect");
 const exerciseSelect = document.getElementById("exerciseSelect");
 
-function init() {
+/* ---------- INIT ---------- */
+function renderWorkouts() {
   workoutSelect.innerHTML = "<option value=''>Select workout</option>";
   Object.keys(workouts).forEach(w=>{
-    workoutSelect.innerHTML += `<option>${w}</option>`;
+    workoutSelect.innerHTML += `<option value="${w}">${w}</option>`;
   });
 }
-init();
+renderWorkouts();
 
 /* ---------- WORKOUT ---------- */
 workoutSelect.onchange = () => {
   currentWorkout = workoutSelect.value;
   exerciseSelect.innerHTML = "<option value=''>Select exercise</option>";
+  if (!currentWorkout) return;
   workouts[currentWorkout].forEach(e=>{
-    exerciseSelect.innerHTML += `<option>${e}</option>`;
+    exerciseSelect.innerHTML += `<option value="${e}">${e}</option>`;
   });
 };
 
-exerciseSelect.onchange = () => {
-  setExercise(exerciseSelect.value);
-};
+exerciseSelect.onchange = () => setExercise(exerciseSelect.value);
 
 function useCustomExercise(){
   const ex = customExercise.value.trim();
@@ -191,15 +155,13 @@ function saveSet(){
   setCount++;
   document.getElementById("setCount").innerText = setCount;
 
-  const entry = {
+  logs.push({
     date:new Date().toISOString().slice(0,10),
     workout:currentWorkout,
     exercise:currentExercise,
     weight:w,
     reps:r
-  };
-
-  logs.push(entry);
+  });
   localStorage.setItem("logs", JSON.stringify(logs));
 
   if(!prs[currentExercise] || w > prs[currentExercise].weight){
@@ -251,9 +213,17 @@ function addExercise(){
 
 function saveWorkout(){
   const name = newWorkoutName.value.trim();
-  if(!name || builderBuffer.length===0) return;
+  if(!name || builderBuffer.length===0) return alert("Name + exercises required");
+
   workouts[name] = [...builderBuffer];
   localStorage.setItem("workouts", JSON.stringify(workouts));
+
   builderBuffer=[];
   newWorkoutName.value="";
-  builder.innerHTML
+  builder.innerHTML="";
+  renderWorkouts();
+}
+</script>
+
+</body>
+</html>
