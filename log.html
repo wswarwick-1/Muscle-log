@@ -46,8 +46,11 @@ logs.forEach(l=>{
 Object.keys(grouped).reverse().forEach(d=>{
   const c = document.createElement("div");
   c.className = "card";
-  c.innerHTML = `<div class="highlight">${d}</div>` +
-    grouped[d].map(l=>`<div class="small">${l.exercise} — ${l.weight}kg x ${l.reps}</div>`).join("");
+  c.innerHTML =
+    `<div class="highlight">${d}</div>` +
+    grouped[d].map(l =>
+      `<div class="small">${l.exercise} — ${l.weight}kg × ${l.reps}</div>`
+    ).join("");
   box.appendChild(c);
 });
 </script>
