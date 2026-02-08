@@ -24,7 +24,7 @@ a { color:#f2c94c; text-decoration:none; }
 h1 {
   text-align:center;
   color:#f2c94c;
-  margin:16px 0;
+  margin:14px 0;
 }
 
 .container {
@@ -95,20 +95,20 @@ input, select {
   <div class="highlight">Current Exercise</div>
   <div id="currentExercise">None</div>
   <div class="small">PR: <span id="prDisplay">—</span></div>
+  <div class="small">Last time: <span id="lastTime">—</span></div>
   <div class="small">Set: <span id="setCount">0</span></div>
 </div>
 
 <!-- WORKOUT SELECT -->
 <div class="card">
   <div class="highlight">Workout</div>
-  <select id="workoutSelect" onchange="loadWorkout()"></select>
+  <select id="workoutSelect"></select>
   <div id="exerciseList"></div>
 </div>
 
 <!-- LOG SET -->
 <div class="card">
   <div class="highlight">Log Set</div>
-  <div class="small" id="lastTime">Last time: —</div>
   <input id="weight" type="number" placeholder="Weight (kg)">
   <input id="reps" type="number" placeholder="Reps">
   <button id="saveSetBtn">Save Set</button>
@@ -135,8 +135,13 @@ input, select {
 
 </div>
 
+<!-- BEEP -->
+<audio id="beep" preload="auto">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=" type="audio/wav">
+</audio>
+
 <script>
-/* ---------- DATA ---------- */
+/* ---------------- DATA ---------------- */
 const DEFAULT_WORKOUTS = {
   "Upper Body": ["Bench Press","Row","OHP","Pull-ups","Triceps"],
   "Lower Body": ["Squat","RDL","Leg Press","Hamstring Curl","Calves"]
@@ -156,14 +161,15 @@ let currentExercise = null;
 let setCount = 0;
 let builderBuffer = [];
 
-/* ---------- ELEMENTS ---------- */
+/* ---------------- ELEMENTS ---------------- */
 const workoutSelect = document.getElementById("workoutSelect");
 const exerciseList = document.getElementById("exerciseList");
 const currentExerciseEl = document.getElementById("currentExercise");
 const prDisplay = document.getElementById("prDisplay");
+const lastTimeEl = document.getElementById("lastTime");
 const setCountEl = document.getElementById("setCount");
 
-/* ---------- INIT ---------- */
+/* ---------------- INIT ---------------- */
 function init() {
   workoutSelect.innerHTML = "";
   Object.keys(workouts).forEach(name => {
@@ -176,138 +182,4 @@ function init() {
 }
 init();
 
-/* ---------- WORKOUT ---------- */
-function loadWorkout() {
-  currentWorkout = workoutSelect.value;
-  exerciseList.innerHTML = "";
-  currentExercise = null;
-  setCount = 0;
-  currentExerciseEl.innerText = "None";
-  prDisplay.innerText = "—";
-  setCountEl.innerText = "0";
-
-  workouts[currentWorkout].forEach(ex => {
-    const d = document.createElement("div");
-    d.className = "exercise";
-    d.innerText = ex;
-    d.onclick = () => selectExercise(ex, d);
-    exerciseList.appendChild(d);
-  });
-}
-
-function selectExercise(ex, el) {
-  currentExercise = ex;
-  setCount = 0;
-  currentExerciseEl.innerText = ex;
-  setCountEl.innerText = "0";
-
-  document.querySelectorAll(".exercise").forEach(e=>e.classList.remove("active"));
-  el.classList.add("active");
-
-  const pr = prs[ex];
-  prDisplay.innerText = pr ? `${pr.weight}kg × ${pr.reps}` : "—";
-  updateLastTime(ex);
-}
-
-/* ---------- LOG SET ---------- */
-document.getElementById("saveSetBtn").onclick = () => {
-  if (!currentExercise) return alert("Select an exercise");
-
-  const w = Number(weight.value);
-  const r = Number(reps.value);
-  if (!w || !r) return;
-
-  setCount++;
-  setCountEl.innerText = setCount;
-
-  logs.push({
-    date: new Date().toISOString().slice(0,10),
-    workout: currentWorkout,
-    exercise: currentExercise,
-    weight: w,
-    reps: r
-  });
-  localStorage.setItem("logs", JSON.stringify(logs));
-
-  const existing = prs[currentExercise];
-  if (!existing || w > existing.weight || (w === existing.weight && r > existing.reps)) {
-    prs[currentExercise] = { weight:w, reps:r };
-    localStorage.setItem("prs", JSON.stringify(prs));
-    prDisplay.innerText = `${w}kg × ${r}`;
-  }
-
-  weight.value = reps.value = "";
-};
-
-/* ---------- TIMER ---------- */
-let timerInterval;
-document.getElementById("startTimerBtn").onclick = () => {
-  clearInterval(timerInterval);
-  let t = Number(restInput.value);
-  updateTimer(t);
-  timerInterval = setInterval(()=>{
-    t--;
-    updateTimer(t);
-    if (t <= 0) {
-  clearInterval(timerInterval);
-
-  // 📳 VIBRATE (if supported)
-  if (navigator.vibrate) {
-    navigator.vibrate([300, 150, 300]);
-  }
-
-  // 🔔 BEEP
-  const beep = document.getElementById("beep");
-  beep.currentTime = 0;
-  beep.play().catch(() => {});
-    }
-};
-document.getElementById("resetTimerBtn").onclick = () => {
-  clearInterval(timerInterval);
-  updateTimer(0);
-};
-function updateTimer(t) {
-  const m = String(Math.floor(t/60)).padStart(2,"0");
-  const s = String(t%60).padStart(2,"0");
-  timer.innerText = `${m}:${s}`;
-}
-
-/* ---------- BUILDER ---------- */
-document.getElementById("addExerciseBtn").onclick = () => {
-  const ex = newExerciseName.value.trim();
-  if (!ex) return;
-  builderBuffer.push(ex);
-  newExerciseName.value = "";
-  builderPreview.innerHTML = builderBuffer.map((e,i)=>`${i+1}. ${e}`).join("<br>");
-};
-
-document.getElementById("saveWorkoutBtn").onclick = () => {
-  const name = newWorkoutName.value.trim();
-  if (!name || builderBuffer.length === 0) return alert("Name + exercises");
-
-  workouts[name] = [...builderBuffer];
-  localStorage.setItem("workouts", JSON.stringify(workouts));
-
-  builderBuffer = [];
-  newWorkoutName.value = "";
-  builderPreview.innerHTML = "";
-  init();
-};
-  function updateLastTime(exercise) {
-  const last = [...logs]
-    .reverse()
-    .find(l => l.exercise === exercise);
-
-  document.getElementById("lastTime").innerText = last
-    ? `Last time: ${last.weight}kg × ${last.reps}`
-    : "Last time: —";
-  }
-</script>
-<audio id="beep">
-  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=" type="audio/wav">
-</audio>
-</body>
-</html>
-
-
-
+/* ---------------- WORKOUT ----------------
