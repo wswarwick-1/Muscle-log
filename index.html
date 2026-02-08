@@ -2,58 +2,116 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Muscle Log Test</title>
+<title>Muscle Log</title>
+
 <style>
-body { background:#eee; font-family:Arial; padding:16px; }
-button { width:100%; padding:12px; margin:6px 0; }
-.active { background:#ffc107; }
+body { background:#2b2b2b; color:#f5f5f5; font-family:Arial; padding:16px; }
+h1 { text-align:center; color:#f2c94c; }
+button { width:100%; padding:14px; margin:6px 0; background:#3a3a3a; color:#f2c94c; border:1px solid #555; border-radius:10px; }
+.exercise.active { background:#f2c94c; color:#000; }
+.card { background:#383838; border:1px solid #555; border-radius:12px; padding:14px; margin:10px 0; }
+input { width:100%; padding:12px; margin:6px 0; background:#444; color:#fff; border:1px solid #666; border-radius:10px; }
+.timer { font-size:32px; text-align:center; color:#f2c94c; }
+.log { font-size:14px; border-bottom:1px solid #555; padding:4px 0; }
 </style>
 </head>
+
 <body>
 
 <h1>Muscle Log</h1>
 
-<button onclick="load()">Load Exercises</button>
+<button onclick="load('A')">Day A – Heavy</button>
+<button onclick="load('B')">Day B – Volume</button>
 
-<div id="ex"></div>
+<div class="card" id="status">No exercise selected</div>
+<div class="card" id="sets">Set: 0</div>
 
-<h2 id="timer">01:00</h2>
-<button onclick="start()">Start</button>
-<button onclick="reset()">Reset</button>
+<div id="exercises"></div>
+
+<input id="w" placeholder="Weight (kg)">
+<input id="r" placeholder="Reps">
+<input id="rir" placeholder="RIR">
+
+<button onclick="save()">Save Set</button>
+
+<div class="card">
+  <h2>Rest Timer</h2>
+  <div class="timer" id="t">01:00</div>
+  <button onclick="start()">Start</button>
+  <button onclick="reset()">Reset</button>
+</div>
+
+<div class="card">
+  <h2>Log</h2>
+  <div id="log"></div>
+</div>
 
 <script>
-let t=60, i=null;
+const workouts={
+ A:["Goblet Squat","RDL","Push-Ups","OHP","Row","Pull-ups"],
+ B:["Split Squat","DB RDL","DB Press","Lateral Raise","Curl","Triceps"]
+};
 
-function load(){
-  ex.innerHTML="";
-  ["Squat","Press","Row"].forEach(n=>{
-    let b=document.createElement("button");
-    b.innerText=n;
-    b.onclick=()=>select(b,n);
-    ex.appendChild(b);
-  });
+let current="", set=0, time=60, int=null;
+let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+
+function load(d){
+ exercises.innerHTML="";
+ current=""; set=0;
+ sets.innerText="Set: 0";
+ status.innerText="No exercise selected";
+ workouts[d].forEach(n=>{
+   let b=document.createElement("button");
+   b.innerText=n;
+   b.className="exercise";
+   b.onclick=()=>sel(n,b);
+   exercises.appendChild(b);
+ });
 }
 
-function select(b,n){
-  document.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
+function sel(n,b){
+ document.querySelectorAll(".exercise").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");
+ current=n; set=0;
+ sets.innerText="Set: 0";
+ status.innerText="Selected: "+n;
+}
+
+function save(){
+ if(!current){ alert("Select exercise"); return; }
+ set++; sets.innerText="Set: "+set;
+ logs.push({ex:current,w:w.value,r:r.value,rir:rir.value});
+ localStorage.setItem("logs",JSON.stringify(logs));
+ draw();
+}
+
+function draw(){
+ log.innerHTML="";
+ logs.slice().reverse().forEach(e=>{
+  log.innerHTML+=`<div class="log">${e.ex} — ${e.w}kg × ${e.r}</div>`;
+ });
 }
 
 function start(){
-  if(i) return;
-  i=setInterval(()=>{
-    t--;
-    timer.innerText="00:"+String(t).padStart(2,"0");
-    if(t<=0){ clearInterval(i); i=null; }
-  },1000);
+ if(int) return;
+ time=60; upd();
+ int=setInterval(()=>{
+  time--; upd();
+  if(time<=0){ clearInterval(int); int=null; if(navigator.vibrate) navigator.vibrate(300); }
+ },1000);
 }
 
 function reset(){
-  clearInterval(i); i=null; t=60;
-  timer.innerText="01:00";
+ clearInterval(int); int=null; time=60; upd();
 }
+
+function upd(){
+ t.innerText="00:"+String(time).padStart(2,"0");
+}
+
+load('A');
+draw();
 </script>
 
 </body>
 </html>
-
