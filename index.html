@@ -108,6 +108,7 @@ input, select {
 <!-- LOG SET -->
 <div class="card">
   <div class="highlight">Log Set</div>
+  <div class="small" id="lastTime">Last time: —</div>
   <input id="weight" type="number" placeholder="Weight (kg)">
   <input id="reps" type="number" placeholder="Reps">
   <button id="saveSetBtn">Save Set</button>
@@ -205,6 +206,7 @@ function selectExercise(ex, el) {
 
   const pr = prs[ex];
   prDisplay.innerText = pr ? `${pr.weight}kg × ${pr.reps}` : "—";
+  updateLastTime(ex);
 }
 
 /* ---------- LOG SET ---------- */
@@ -280,8 +282,18 @@ document.getElementById("saveWorkoutBtn").onclick = () => {
   builderPreview.innerHTML = "";
   init();
 };
+  function updateLastTime(exercise) {
+  const last = [...logs]
+    .reverse()
+    .find(l => l.exercise === exercise);
+
+  document.getElementById("lastTime").innerText = last
+    ? `Last time: ${last.weight}kg × ${last.reps}`
+    : "Last time: —";
+  }
 </script>
 
 </body>
 </html>
+
 
