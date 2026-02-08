@@ -16,7 +16,7 @@ body {
 h1 {
   text-align:center;
   color:#f2c94c;
-  margin-bottom:18px;
+  margin-bottom:16px;
 }
 
 h2 {
@@ -84,4 +84,133 @@ input {
 <h2 id="dayTitle"></h2>
 
 <div class="card" id="selected">No exercise selected</div>
-<div class="
+<div class="card" id="setCounter">Set: 0</div>
+
+<div id="exerciseList"></div>
+
+<input id="weight" placeholder="Weight (kg)">
+<input id="reps" placeholder="Reps">
+<input id="rir" placeholder="RIR">
+
+<button onclick="saveSet()">Save Set</button>
+
+<div class="card">
+  <h2>Rest Timer</h2>
+  <div class="timer" id="timerDisplay">01:00</div>
+  <button onclick="startTimer()">Start</button>
+  <button onclick="resetTimer()">Reset</button>
+</div>
+
+<div class="card">
+  <h2>Workout Log</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+const workouts = {
+  A:["Goblet Squat","RDL","Push-Ups","OHP","One-Arm Row","Pull-ups"],
+  B:["Split Squat","DB RDL","DB Press","Lateral Raise","DB Row","Curl","Triceps"]
+};
+
+let currentExercise="";
+let setCount=0;
+let logs=JSON.parse(localStorage.getItem("logs")||"[]");
+
+let timer=60;
+let timerInterval=null;
+
+function loadDay(day){
+  document.getElementById("dayTitle").innerText =
+    day==="A" ? "Day A – Heavy" : "Day B – Volume";
+
+  const list=document.getElementById("exerciseList");
+  list.innerHTML="";
+  currentExercise="";
+  setCount=0;
+  document.getElementById("setCounter").innerText="Set: 0";
+  document.getElementById("selected").innerText="No exercise selected";
+
+  workouts[day].forEach(name=>{
+    const b=document.createElement("button");
+    b.innerText=name;
+    b.className="exercise";
+    b.onclick=()=>selectExercise(name,b);
+    list.appendChild(b);
+  });
+}
+
+function selectExercise(name,btn){
+  document.querySelectorAll(".exercise").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  currentExercise=name;
+  setCount=0;
+  document.getElementById("setCounter").innerText="Set: 0";
+  document.getElementById("selected").innerText="Selected: "+name;
+}
+
+function saveSet(){
+  if(!currentExercise){
+    alert("Select an exercise first");
+    return;
+  }
+  setCount++;
+  document.getElementById("setCounter").innerText="Set: "+setCount;
+
+  logs.push({
+    date:new Date().toLocaleString(),
+    exercise:currentExercise,
+    weight:weight.value,
+    reps:reps.value,
+    rir:rir.value
+  });
+
+  localStorage.setItem("logs",JSON.stringify(logs));
+  renderLog();
+}
+
+function renderLog(){
+  const log=document.getElementById("log");
+  log.innerHTML="";
+  logs.slice().reverse().forEach(e=>{
+    log.innerHTML+=`
+      <div class="log-entry">
+        <strong>${e.exercise}</strong> — ${e.weight}kg × ${e.reps} (RIR ${e.rir})
+      </div>`;
+  });
+}
+
+function startTimer(){
+  if(timerInterval) return;
+  timer=60;
+  updateTimer();
+  timerInterval=setInterval(()=>{
+    timer--;
+    updateTimer();
+    if(timer<=0){
+      clearInterval(timerInterval);
+      timerInterval=null;
+      if(navigator.vibrate) navigator.vibrate([300,150,300]);
+    }
+  },1000);
+}
+
+function resetTimer(){
+  clearInterval(timerInterval);
+  timerInterval=null;
+  timer=60;
+  updateTimer();
+}
+
+function updateTimer(){
+  const m=String(Math.floor(timer/60)).padStart(2,"0");
+  const s=String(timer%60).padStart(2,"0");
+  document.getElementById("timerDisplay").innerText=`${m}:${s}`;
+}
+
+/* AUTO-LOAD DAY A */
+loadDay('A');
+renderLog();
+</script>
+
+</body>
+</html>
