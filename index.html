@@ -158,3 +158,15 @@ button:active {
   <input id="restInput" type="number" value="90">
   <div class
 
+<div class="card">
+  <label>Create Custom Workout</label>
+
+  <input id="newWorkoutName" placeholder="Workout name (e.g. Upper)">
+  <input id="newExercise" placeholder="Exercise name">
+
+  <button onclick="addExerciseToBuilder()">Add Exercise</button>
+
+  <div id="builderList" style="margin-top:10px;color:#bdbdbd"></div>
+
+  <button onclick="saveCustomWorkout()">Save Workout</button>
+  </div>
