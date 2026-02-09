@@ -1,22 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
 <title>Training Log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { background:#2f2f2f; color:#fff; font-family:system-ui; margin:0 }
-header { background:#1f1f1f; padding:14px; display:flex; justify-content:space-between }
-header span,a { color:#f2c94c; font-weight:700; text-decoration:none }
-.card { background:#3a3a3a; margin:14px; padding:14px; border-radius:14px }
-label { color:#f2c94c; font-weight:600 }
-select,input,button {
-  width:100%; padding:12px; margin-top:8px;
-  border-radius:10px; border:none; font-size:16px;
-  background:#222; color:#fff
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #2f2f2f;
+  color: #f5f5f5;
 }
-button { background:#444; color:#f2c94c; font-weight:700 }
-.timer { font-size:32px; text-align:center; margin:10px 0 }
+
+header {
+  background: #1f1f1f;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header span {
+  color: #f2c94c;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+header a {
+  color: #f2c94c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.card {
+  background: #3a3a3a;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px;
+}
+
+label {
+  color: #f2c94c;
+  font-weight: 600;
+}
+
+select, input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: none;
+  background: #222;
+  color: #fff;
+  font-size: 16px;
+}
+
+button {
+  background: #444;
+  color: #f2c94c;
+  font-weight: 700;
+}
+
+.timer {
+  font-size: 32px;
+  text-align: center;
+  margin: 10px 0;
+}
 </style>
 </head>
 
@@ -43,7 +93,7 @@ button { background:#444; color:#f2c94c; font-weight:700 }
 <div class="card">
   <label>Exercise</label>
   <select id="exerciseSelect"></select>
-  <input id="customExercise" placeholder="Or type custom exercise">
+  <input id="customExercise" placeholder="Or type exercise">
   <button onclick="useCustomExercise()">Use custom exercise</button>
 </div>
 
@@ -62,25 +112,12 @@ button { background:#444; color:#f2c94c; font-weight:700 }
   <button onclick="resetTimer()">Reset</button>
 </div>
 
-<div class="card">
-  <label>Create Custom Workout</label>
-  <input id="newWorkoutName" placeholder="Workout name">
-  <input id="newExercise" placeholder="Exercise name">
-  <button onclick="addExercise()">Add Exercise</button>
-  <div id="builder"></div>
-  <button onclick="saveWorkout()">Save Workout</button>
-</div>
-
-<audio id="beep">
-  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=">
-</audio>
-
 <script>
-/* ---------- SAFE INITIALISATION ---------- */
+/* ---------- DATA ---------- */
 const DEFAULT_WORKOUTS = {
-  Push:["Bench Press","OHP","Dips"],
-  Pull:["Row","Pull-up","Lat Pulldown"],
-  Legs:["Squat","RDL","Leg Press"]
+  Push: ["Bench Press", "OHP", "Dips"],
+  Pull: ["Row", "Pull-up", "Lat Pulldown"],
+  Legs: ["Squat", "RDL", "Leg Press"]
 };
 
 let workouts = JSON.parse(localStorage.getItem("workouts"));
@@ -95,7 +132,6 @@ let prs  = JSON.parse(localStorage.getItem("prs")) || {};
 let currentWorkout = null;
 let currentExercise = null;
 let setCount = 0;
-let builderBuffer = [];
 
 /* ---------- ELEMENTS ---------- */
 const workoutSelect = document.getElementById("workoutSelect");
@@ -104,127 +140,133 @@ const exerciseSelect = document.getElementById("exerciseSelect");
 /* ---------- INIT ---------- */
 function renderWorkouts() {
   workoutSelect.innerHTML = "<option value=''>Select workout</option>";
-  Object.keys(workouts).forEach(w=>{
+  Object.keys(workouts).forEach(w => {
     workoutSelect.innerHTML += `<option value="${w}">${w}</option>`;
   });
 }
 renderWorkouts();
 
-/* ---------- WORKOUT ---------- */
+/* ---------- WORKOUT CHANGE ---------- */
 workoutSelect.onchange = () => {
   currentWorkout = workoutSelect.value;
+  currentExercise = null;
+  setCount = 0;
+
+  document.getElementById("currentExercise").innerText = "None";
+  document.getElementById("setCount").innerText = "0";
+
   exerciseSelect.innerHTML = "<option value=''>Select exercise</option>";
   if (!currentWorkout) return;
-  workouts[currentWorkout].forEach(e=>{
-    exerciseSelect.innerHTML += `<option value="${e}">${e}</option>`;
+
+  workouts[currentWorkout].forEach(ex => {
+    exerciseSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
   });
 };
 
-exerciseSelect.onchange = () => setExercise(exerciseSelect.value);
+/* ---------- EXERCISE CHANGE (FIXED) ---------- */
+exerciseSelect.onchange = () => {
+  const ex = exerciseSelect.value;
+  if (!ex) return;
 
-function useCustomExercise(){
-  const ex = customExercise.value.trim();
-  if(!ex) return;
-  setExercise(ex);
-  customExercise.value="";
-}
-
-function setExercise(ex){
   currentExercise = ex;
   setCount = 0;
+
   document.getElementById("currentExercise").innerText = ex;
   document.getElementById("setCount").innerText = "0";
 
-  const last = logs.filter(l=>l.exercise===ex).slice(-1)[0];
+  const last = logs.filter(l => l.exercise === ex).slice(-1)[0];
   document.getElementById("last").innerText =
-    last ? `${last.weight}kg x ${last.reps}` : "—";
+    last ? `${last.weight}kg × ${last.reps}` : "—";
 
   const pr = prs[ex];
   document.getElementById("pr").innerText =
-    pr ? `${pr.weight}kg x ${pr.reps}` : "—";
+    pr ? `${pr.weight}kg × ${pr.reps}` : "—";
+};
+
+/* ---------- CUSTOM EXERCISE ---------- */
+function useCustomExercise() {
+  const ex = customExercise.value.trim();
+  if (!ex) return;
+  if (!currentWorkout) {
+    alert("Select a workout first");
+    return;
+  }
+
+  currentExercise = ex;
+  setCount = 0;
+
+  document.getElementById("currentExercise").innerText = ex;
+  document.getElementById("setCount").innerText = "0";
+
+  customExercise.value = "";
 }
 
-/* ---------- LOG SET ---------- */
-function saveSet(){
-  if(!currentWorkout || !currentExercise) return alert("Select workout & exercise");
+/* ---------- SAVE SET ---------- */
+function saveSet() {
+  if (!currentWorkout || !currentExercise) {
+    alert("Select workout and exercise first");
+    return;
+  }
 
   const w = +weight.value;
   const r = +reps.value;
-  if(!w || !r) return;
+  if (!w || !r) return;
 
   setCount++;
   document.getElementById("setCount").innerText = setCount;
 
-  logs.push({
-    date:new Date().toISOString().slice(0,10),
-    workout:currentWorkout,
-    exercise:currentExercise,
-    weight:w,
-    reps:r
-  });
-  localStorage.setItem("trainingLogs", JSON.stringify(logs));
+  const entry = {
+    workout: currentWorkout,
+    exercise: currentExercise,
+    weight: w,
+    reps: r,
+    date: new Date().toISOString().slice(0,10)
+  };
 
-  if(!prs[currentExercise] || w > prs[currentExercise].weight){
-    prs[currentExercise] = {weight:w,reps:r};
+  logs.push(entry);
+  localStorage.setItem("logs", JSON.stringify(logs));
+
+  if (!prs[currentExercise] || w > prs[currentExercise].weight) {
+    prs[currentExercise] = { weight: w, reps: r };
     localStorage.setItem("prs", JSON.stringify(prs));
   }
 
-  document.getElementById("last").innerText = `${w}kg x ${r}`;
+  document.getElementById("last").innerText = `${w}kg × ${r}`;
   document.getElementById("pr").innerText =
-    `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`;
+    `${prs[currentExercise].weight}kg × ${prs[currentExercise].reps}`;
 
-  weight.value = reps.value = "";
+  weight.value = "";
+  reps.value = "";
 }
 
 /* ---------- TIMER ---------- */
 let tInt;
-function startTimer(){
+function startTimer() {
   let t = +restInput.value;
   clearInterval(tInt);
   updateTimer(t);
-  tInt = setInterval(()=>{
+
+  tInt = setInterval(() => {
     t--;
     updateTimer(t);
-    if(t<=0){
+    if (t <= 0) {
       clearInterval(tInt);
       navigator.vibrate?.(300);
-      beep.play().catch(()=>{});
     }
-  },1000);
+  }, 1000);
 }
-function resetTimer(){
+
+function resetTimer() {
   clearInterval(tInt);
-  timer.innerText="00:00";
+  timer.innerText = "00:00";
 }
-function updateTimer(t){
+
+function updateTimer(t) {
   timer.innerText =
-    String(Math.floor(t/60)).padStart(2,"0")+":"+
-    String(t%60).padStart(2,"0");
-}
-
-/* ---------- CUSTOM WORKOUT ---------- */
-function addExercise(){
-  const ex = newExercise.value.trim();
-  if(!ex) return;
-  builderBuffer.push(ex);
-  newExercise.value="";
-  builder.innerHTML = builderBuffer.join("<br>");
-}
-
-function saveWorkout(){
-  const name = newWorkoutName.value.trim();
-  if(!name || builderBuffer.length===0) return alert("Name + exercises required");
-
-  workouts[name] = [...builderBuffer];
-  localStorage.setItem("workouts", JSON.stringify(workouts));
-
-  builderBuffer=[];
-  newWorkoutName.value="";
-  builder.innerHTML="";
-  renderWorkouts();
+    String(Math.floor(t / 60)).padStart(2, "0") + ":" +
+    String(t % 60).padStart(2, "0");
 }
 </script>
 
 </body>
 </html>
-
