@@ -2,188 +2,85 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Training Log</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Log</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #2f2f2f;
-  color: #f5f5f5;
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#262626;
+  color:#f5f5f5;
 }
-
-header {
-  background: #1f1f1f;
-  padding: 16px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #f2c94c;
-  text-align: center;
+header{
+  background:#1c1c1c;
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
 }
-
-.container {
-  padding: 16px;
+header a{
+  color:#f2c94c;
+  text-decoration:none;
+  font-weight:600;
 }
-
-.workout {
-  margin-bottom: 28px;
+.container{
+  padding:16px;
 }
-
-.workout-title {
-  font-size: 20px;
-  color: #f2c94c;
-  margin-bottom: 10px;
+.card{
+  background:#343434;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
 }
-
-.date {
-  font-size: 14px;
-  opacity: 0.8;
-  margin: 14px 0 6px;
+h2{
+  color:#f2c94c;
+  margin-top:0;
 }
-
-.set-card {
-  background: #3a3a3a;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 10px;
-}
-
-.set-card.pr {
-  border: 2px solid #f2c94c;
-}
-
-.exercise {
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.details {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-top: 4px;
-}
-
-.pr-badge {
-  display: inline-block;
-  background: #f2c94c;
-  color: #000;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: 6px;
-}
-
-.empty {
-  text-align: center;
-  opacity: 0.6;
-  margin-top: 40px;
-}
-
-.back {
-  width: 100%;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  background: #3a3a3a;
-  color: #f2c94c;
-  font-size: 16px;
-  margin-bottom: 16px;
+.set{
+  margin-top:8px;
+  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<header>Training Log</header>
+<header>
+  <strong>Log</strong>
+  <a href="index.html">Back</a>
+</header>
 
-<div class="container">
-  <button class="back" onclick="history.back()">⬅ Back to Workout</button>
-  <div id="logContainer"></div>
-</div>
+<div class="container" id="logContainer"></div>
 
 <script>
-(function () {
-  const container = document.getElementById("logContainer");
+const logs=JSON.parse(localStorage.getItem("logs"))||[];
 
-  let logs;
-  try {
-    logs = JSON.parse(localStorage.getItem("logs")) || [];
-  } catch (e) {
-    logs = [];
-  }
-
-  if (!Array.isArray(logs) || logs.length === 0) {
-    container.innerHTML = "<div class='empty'>No logs yet</div>";
-    return;
-  }
-
-  /* ---------- BUILD PR MAP ---------- */
-  const prs = {};
-  logs.forEach(l => {
-    if (!l.exercise) return;
-    const prev = prs[l.exercise];
-    if (
-      !prev ||
-      l.weight > prev.weight ||
-      (l.weight === prev.weight && l.reps > prev.reps)
-    ) {
-      prs[l.exercise] = { weight: l.weight, reps: l.reps };
-    }
-  });
-
-  /* ---------- NEWEST FIRST ---------- */
-  logs = [...logs].reverse();
-
-  /* ---------- GROUP: WORKOUT → DATE ---------- */
-  const grouped = {};
-  logs.forEach(l => {
-    if (!l.workout || !l.date) return;
-    grouped[l.workout] ??= {};
-    grouped[l.workout][l.date] ??= [];
+if(!logs.length){
+  logContainer.innerHTML="No logs yet";
+}else{
+  const grouped={};
+  logs.slice().reverse().forEach(l=>{
+    grouped[l.workout]??={};
+    grouped[l.workout][l.date]??=[];
     grouped[l.workout][l.date].push(l);
   });
 
-  /* ---------- RENDER ---------- */
-  Object.keys(grouped).forEach(workout => {
-    const wDiv = document.createElement("div");
-    wDiv.className = "workout";
-    wDiv.innerHTML = `<div class="workout-title">${workout}</div>`;
+  Object.keys(grouped).forEach(w=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`<h2>${w}</h2>`;
 
-    Object.keys(grouped[workout]).forEach(date => {
-      const d = document.createElement("div");
-      d.className = "date";
-      d.textContent = date;
-      wDiv.appendChild(d);
-
-      grouped[workout][date].forEach(l => {
-        const isPR =
-          prs[l.exercise] &&
-          prs[l.exercise].weight === l.weight &&
-          prs[l.exercise].reps === l.reps;
-
-        const card = document.createElement("div");
-        card.className = "set-card" + (isPR ? " pr" : "");
-
-        card.innerHTML = `
-          <div class="exercise">
-            ${l.exercise}
-            ${isPR ? "<span class='pr-badge'>PR 🏆</span>" : ""}
-          </div>
-          <div class="details">
-            ${l.weight}kg × ${l.reps}
-            ${l.rir !== undefined ? `(RIR ${l.rir})` : ""}
-          </div>
-        `;
-
-        wDiv.appendChild(card);
+    Object.keys(grouped[w]).forEach(d=>{
+      card.innerHTML+=`<strong>${d}</strong>`;
+      grouped[w][d].forEach(s=>{
+        card.innerHTML+=
+          `<div class="set">${s.exercise} — ${s.weight}kg x ${s.reps}</div>`;
       });
     });
 
-    container.appendChild(wDiv);
+    logContainer.appendChild(card);
   });
-})();
+}
 </script>
 
 </body>
