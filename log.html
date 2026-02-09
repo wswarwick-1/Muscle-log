@@ -23,23 +23,15 @@ header a{
   text-decoration:none;
   font-weight:600;
 }
-.container{
-  padding:16px;
-}
+.container{ padding:16px; }
 .card{
   background:#343434;
   border-radius:16px;
   padding:16px;
   margin-bottom:16px;
 }
-h2{
-  color:#f2c94c;
-  margin-top:0;
-}
-.set{
-  margin-top:8px;
-  font-size:14px;
-}
+h2{ color:#f2c94c;margin:0 0 8px; }
+.set{ font-size:14px;margin-top:6px; }
 </style>
 </head>
 
@@ -56,7 +48,7 @@ h2{
 const logs=JSON.parse(localStorage.getItem("logs"))||[];
 
 if(!logs.length){
-  logContainer.innerHTML="No logs yet";
+  logContainer.innerText="No logs yet";
 }else{
   const grouped={};
   logs.slice().reverse().forEach(l=>{
@@ -69,7 +61,6 @@ if(!logs.length){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`<h2>${w}</h2>`;
-
     Object.keys(grouped[w]).forEach(d=>{
       card.innerHTML+=`<strong>${d}</strong>`;
       grouped[w][d].forEach(s=>{
@@ -77,7 +68,6 @@ if(!logs.length){
           `<div class="set">${s.exercise} — ${s.weight}kg x ${s.reps}</div>`;
       });
     });
-
     logContainer.appendChild(card);
   });
 }
