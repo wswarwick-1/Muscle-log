@@ -3,52 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <title>Training Log</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-  background:#2f2f2f;
-  color:#eee;
-}
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #2f2f2f;
+    color: #f5f5f5;
+  }
 
-header{
-  padding:14px;
-  background:#1f1f1f;
-  color:#f2c94c;
-  font-size:20px;
-  font-weight:600;
-}
+  header {
+    background: #1f1f1f;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #f2c94c;
+    text-align: center;
+  }
 
-main{
-  padding:14px;
-}
+  .container {
+    padding: 16px;
+  }
 
-.workout{
-  margin-bottom:22px;
-}
+  .workout {
+    margin-bottom: 24px;
+  }
 
-.workout h2{
-  color:#f2c94c;
-  margin:10px 0;
-}
+  .workout-title {
+    font-size: 18px;
+    color: #f2c94c;
+    margin-bottom: 8px;
+  }
 
-.day{
-  background:#3a3a3a;
-  border-radius:12px;
-  padding:10px;
-  margin-bottom:10px;
-}
+  .date {
+    font-size: 14px;
+    opacity: 0.8;
+    margin: 12px 0 6px;
+  }
 
-.set{
-  font-size:14px;
-  margin-top:6px;
-  color:#ddd;
-}
-.empty{
-  color:#aaa;
-  margin-top:20px;
-}
+  .set-card {
+    background: #3a3a3a;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .exercise {
+    font-weight: bold;
+  }
+
+  .details {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .empty {
+    text-align: center;
+    opacity: 0.6;
+    margin-top: 40px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    border: none;
+    background: #3a3a3a;
+    color: #f2c94c;
+    font-size: 16px;
+  }
 </style>
 </head>
 
@@ -56,33 +81,68 @@ main{
 
 <header>Training Log</header>
 
-<main id="logContainer"></main>
+<div class="container">
+  <button onclick="history.back()">⬅ Back to Workout</button>
+  <div id="logContainer"></div>
+</div>
 
 <script>
-(function(){
+(function () {
   const container = document.getElementById("logContainer");
 
   let logs;
   try {
     logs = JSON.parse(localStorage.getItem("logs")) || [];
-  } catch(e){
+  } catch (e) {
     logs = [];
-    logs.reverse();
   }
 
-  if(!logs.length){
+  if (!Array.isArray(logs) || logs.length === 0) {
     container.innerHTML = "<div class='empty'>No logs yet</div>";
     return;
   }
 
+  // Newest first
+  logs.reverse();
+
+  // Group: workout → date → entries
   const grouped = {};
 
   logs.forEach(l => {
-    if(!l.workout || !l.date) return;
-
-    grouped[l.workout] ??= {};
-    grouped[l.workout][l.date] ??= [];
+    if (!grouped[l.workout]) grouped[l.workout] = {};
+    if (!grouped[l.workout][l.date]) grouped[l.workout][l.date] = [];
     grouped[l.workout][l.date].push(l);
   });
 
-Object.keys(grouped[workout]).reverse().forEach(date => {
+  Object.keys(grouped).forEach(workout => {
+    const wDiv = document.createElement("div");
+    wDiv.className = "workout";
+    wDiv.innerHTML = `<div class="workout-title">${workout}</div>`;
+
+    Object.keys(grouped[workout]).forEach(date => {
+      const d = document.createElement("div");
+      d.className = "date";
+      d.textContent = date;
+      wDiv.appendChild(d);
+
+      grouped[workout][date].forEach(l => {
+        const card = document.createElement("div");
+        card.className = "set-card";
+        card.innerHTML = `
+          <div class="exercise">${l.exercise}</div>
+          <div class="details">
+            ${l.weight}kg × ${l.reps}
+            ${l.rir !== undefined ? `(RIR ${l.rir})` : ""}
+          </div>
+        `;
+        wDiv.appendChild(card);
+      });
+    });
+
+    container.appendChild(wDiv);
+  });
+})();
+</script>
+
+</body>
+</html>
