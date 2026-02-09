@@ -9,11 +9,11 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #2f2f2f;
+  background: #2b2b2b;
   color: #f2f2f2;
 }
 header {
-  background: #1f1f1f;
+  background: #1c1c1c;
   padding: 14px;
   font-size: 20px;
   font-weight: bold;
@@ -23,9 +23,9 @@ header {
 }
 .card {
   background: #3a3a3a;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 14px;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 h2 {
   color: #f0c24b;
@@ -33,210 +33,13 @@ h2 {
 }
 select, input, button {
   width: 100%;
-  margin-top: 8px;
-  padding: 12px;
-  border-radius: 10px;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 12px;
   border: none;
   font-size: 16px;
 }
 button {
   background: #f0c24b;
   color: #000;
-  font-weight: bold;
-}
-.small {
-  opacity: 0.8;
-  font-size: 14px;
-}
-.log-item {
-  background: #444;
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 8px;
-}
-</style>
-</head>
-
-<body>
-<header>Training Log</header>
-
-<div class="container">
-
-  <div class="card">
-    <h2>Workout</h2>
-    <select id="workoutSelect" onchange="loadExercises()"></select>
-  </div>
-
-  <div class="card">
-    <h2>Exercise</h2>
-    <select id="exerciseSelect" onchange="selectExercise()"></select>
-    <input id="customExercise" placeholder="Or type custom exercise">
-    <button onclick="useCustomExercise()">Use custom exercise</button>
-    <div class="small">Current: <span id="currentExercise">None</span></div>
-    <div class="small">PR: <span id="pr">—</span></div>
-    <div class="small">Last: <span id="last">—</span></div>
-  </div>
-
-  <div class="card">
-    <h2>Log Set</h2>
-    <input id="weight" type="number" placeholder="Weight (kg)">
-    <input id="reps" type="number" placeholder="Reps">
-    <button onclick="saveSet()">Save Set</button>
-  </div>
-
-  <div class="card">
-    <h2>Create Custom Workout</h2>
-    <input id="newWorkoutName" placeholder="Workout name">
-    <input id="newExercise" placeholder="Exercise name">
-    <button onclick="addExerciseToBuilder()">Add Exercise</button>
-    <div id="builderList"></div>
-    <button onclick="saveCustomWorkout()">Save Workout</button>
-  </div>
-
-  <div class="card">
-    <h2>Log</h2>
-    <div id="logContainer"></div>
-  </div>
-
-</div>
-
-<script>
-/* ---------- DATA ---------- */
-
-let workouts = JSON.parse(localStorage.getItem("workouts")) || {
-  Push: ["Bench Press", "OHP", "Incline DB Press"],
-  Pull: ["Barbell Row", "Lat Pulldown", "RDL"],
-  Legs: ["Squat", "Leg Press", "Ham Curl"]
-};
-
-let logs = JSON.parse(localStorage.getItem("logs")) || [];
-let prs = JSON.parse(localStorage.getItem("prs")) || {};
-
-let currentWorkout = "";
-let currentExercise = "";
-let builder = [];
-
-/* ---------- INIT ---------- */
-
-function init() {
-  const w = document.getElementById("workoutSelect");
-  w.innerHTML = "";
-  Object.keys(workouts).forEach(k => {
-    const o = document.createElement("option");
-    o.value = k;
-    o.textContent = k;
-    w.appendChild(o);
-  });
-  loadExercises();
-  renderLog();
-}
-init();
-
-/* ---------- WORKOUT / EXERCISE ---------- */
-
-function loadExercises() {
-  currentWorkout = workoutSelect.value;
-  const e = document.getElementById("exerciseSelect");
-  e.innerHTML = "";
-  workouts[currentWorkout].forEach(x => {
-    const o = document.createElement("option");
-    o.value = x;
-    o.textContent = x;
-    e.appendChild(o);
-  });
-  selectExercise();
-}
-
-function selectExercise() {
-  currentExercise = exerciseSelect.value;
-  updateExerciseInfo();
-}
-
-function useCustomExercise() {
-  const v = customExercise.value.trim();
-  if (!v) return;
-  currentExercise = v;
-  updateExerciseInfo();
-}
-
-function updateExerciseInfo() {
-  document.getElementById("currentExercise").innerText = currentExercise || "None";
-  document.getElementById("pr").innerText =
-    prs[currentExercise]
-      ? `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`
-      : "—";
-  const last = logs.filter(l => l.exercise === currentExercise).slice(-1)[0];
-  document.getElementById("last").innerText =
-    last ? `${last.weight}kg x ${last.reps}` : "—";
-}
-
-/* ---------- LOGGING ---------- */
-
-function saveSet() {
-  if (!currentExercise) return;
-  const w = Number(weight.value);
-  const r = Number(reps.value);
-  if (!w || !r) return;
-
-  const entry = {
-    date: new Date().toISOString().slice(0,10),
-    workout: currentWorkout,
-    exercise: currentExercise,
-    weight: w,
-    reps: r
-  };
-
-  logs.push(entry);
-  localStorage.setItem("logs", JSON.stringify(logs));
-
-  if (!prs[currentExercise] || w > prs[currentExercise].weight) {
-    prs[currentExercise] = { weight: w, reps: r };
-    localStorage.setItem("prs", JSON.stringify(prs));
-  }
-
-  weight.value = reps.value = "";
-  updateExerciseInfo();
-  renderLog();
-}
-
-/* ---------- LOG VIEW ---------- */
-
-function renderLog() {
-  const c = document.getElementById("logContainer");
-  c.innerHTML = "";
-  logs.slice().reverse().forEach(l => {
-    const d = document.createElement("div");
-    d.className = "log-item";
-    d.innerHTML = `<b>${l.exercise}</b><br>${l.weight}kg x ${l.reps}<br><span class="small">${l.workout} — ${l.date}</span>`;
-    c.appendChild(d);
-  });
-}
-
-/* ---------- CUSTOM WORKOUT BUILDER ---------- */
-
-function addExerciseToBuilder() {
-  const e = newExercise.value.trim();
-  if (!e) return;
-  builder.push(e);
-  newExercise.value = "";
-  renderBuilder();
-}
-
-function renderBuilder() {
-  builderList.innerHTML = builder.map((e,i)=>`${i+1}. ${e}`).join("<br>");
-}
-
-function saveCustomWorkout() {
-  const name = newWorkoutName.value.trim();
-  if (!name || builder.length === 0) return;
-  workouts[name] = [...builder];
-  localStorage.setItem("workouts", JSON.stringify(workouts));
-  builder = [];
-  newWorkoutName.value = "";
-  renderBuilder();
-  init();
-}
-</script>
-
-</body>
-</html>
+  font
