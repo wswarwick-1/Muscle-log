@@ -1,140 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Training Log</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Training Log</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #2f2f2f;
-      color: #eaeaea;
-    }
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  background:#2f2f2f;
+  color:#eee;
+}
 
-    header {
-      background: #1f1f1f;
-      padding: 14px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+header{
+  padding:14px;
+  background:#1f1f1f;
+  color:#f2c94c;
+  font-size:20px;
+  font-weight:600;
+}
 
-    header h1 {
-      margin: 0;
-      font-size: 18px;
-      color: #f2c94c;
-    }
+main{
+  padding:14px;
+}
 
-    header a {
-      color: #f2c94c;
-      text-decoration: none;
-      font-weight: 600;
-    }
+.workout{
+  margin-bottom:22px;
+}
 
-    main {
-      padding: 16px;
-    }
+.workout h2{
+  color:#f2c94c;
+  margin:10px 0;
+}
 
-    .workout-title {
-      margin-top: 26px;
-      margin-bottom: 10px;
-      font-size: 20px;
-      color: #f2c94c;
-    }
+.day{
+  background:#3a3a3a;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:10px;
+}
 
-    .date-card {
-      background: #3a3a3a;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 14px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-    }
-
-    .date-card strong {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 15px;
-      color: #ffffff;
-    }
-
-    .set-row {
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      color: #dcdcdc;
-    }
-
-    .set-row:last-child {
-      border-bottom: none;
-    }
-
-    .exercise {
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .meta {
-      font-size: 14px;
-      color: #bdbdbd;
-    }
-
-    .empty {
-      text-align: center;
-      margin-top: 60px;
-      color: #9e9e9e;
-      font-size: 16px;
-    }
-  </style>
+.set{
+  font-size:14px;
+  margin-top:6px;
+  color:#ddd;
+}
+.empty{
+  color:#aaa;
+  margin-top:20px;
+}
+</style>
 </head>
 
 <body>
 
-<header>
-  <h1>Training Log</h1>
-  <a href="index.html">Back</a>
-</header>
+<header>Training Log</header>
 
-<main id="logContainer">
-  <!-- Logs render here -->
-</main>
+<main id="logContainer"></main>
 
 <script>
+(function(){
   const container = document.getElementById("logContainer");
-  const logs = JSON.parse(localStorage.getItem("trainingLogs")) || [];
 
-  if (logs.length === 0) {
-    container.innerHTML = `<div class="empty">No logs yet</div>`;
-  } else {
-    const grouped = {};
-
-    // Group by workout then date
-    logs.forEach(l => {
-      if (!grouped[l.workout]) grouped[l.workout] = {};
-      if (!grouped[l.workout][l.date]) grouped[l.workout][l.date] = [];
-      grouped[l.workout][l.date].push(l);
-    });
-
-    Object.keys(grouped).forEach(workout => {
-      container.innerHTML += `<div class="workout-title">${workout}</div>`;
-
-      Object.keys(grouped[workout]).reverse().forEach(date => {
-        container.innerHTML += `<div class="date-card">
-          <strong>${date}</strong>`;
-
-        grouped[workout][date].forEach(l => {
-          container.innerHTML += `
-            <div class="set-row">
-              <div class="exercise">${l.exercise}</div>
-              <div class="meta">${l.weight}kg × ${l.reps}${l.rir ? ` (RIR ${l.rir})` : ""}</div>
-            </div>`;
-        });
-
-        container.innerHTML += `</div>`;
-      });
-    });
+  let logs;
+  try {
+    logs = JSON.parse(localStorage.getItem("logs")) || [];
+  } catch(e){
+    logs = [];
   }
-</script>
 
-</body>
-</html>
+  if(!logs.length){
+    container.innerHTML = "<div class='empty'>No logs yet</div>";
+    return;
+  }
+
+  const grouped = {};
+
+  logs.forEach(l => {
+    if(!l.workout || !l.date) return;
+
+    grouped[l.workout] ??= {};
+    grouped[l.workout][l.date] ??= [];
+    grouped[l.workout][l.date].push(l);
+  });
+
+  Object.keys(grouped).forEach(workout => {
+    const w = document.createElement("div");
+    w.className = "workout";
+    w.inner
