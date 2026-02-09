@@ -67,6 +67,7 @@ main{
     logs = JSON.parse(localStorage.getItem("logs")) || [];
   } catch(e){
     logs = [];
+    logs.reverse();
   }
 
   if(!logs.length){
@@ -84,7 +85,4 @@ main{
     grouped[l.workout][l.date].push(l);
   });
 
-  Object.keys(grouped).forEach(workout => {
-    const w = document.createElement("div");
-    w.className = "workout";
-    w.inner
+Object.keys(grouped[workout]).reverse().forEach(date => {
