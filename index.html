@@ -162,7 +162,7 @@ function saveSet(){
     weight:w,
     reps:r
   });
-  localStorage.setItem("logs", JSON.stringify(logs));
+  localStorage.setItem("trainingLogs", JSON.stringify(logs));
 
   if(!prs[currentExercise] || w > prs[currentExercise].weight){
     prs[currentExercise] = {weight:w,reps:r};
@@ -227,3 +227,4 @@ function saveWorkout(){
 
 </body>
 </html>
+
