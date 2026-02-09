@@ -30,8 +30,8 @@ header{
 }
 
 header h1{
-  font-size:18px;
   margin:0;
+  font-size:18px;
   color:var(--accent);
   letter-spacing:.5px;
 }
@@ -42,9 +42,7 @@ header a{
   font-weight:600;
 }
 
-.container{
-  padding:16px;
-}
+.container{ padding:16px; }
 
 .card{
   background:var(--card);
@@ -121,14 +119,153 @@ button{
     <button onclick="saveSet()">Save Set</button>
   </div>
 
+  <div class="card">
+    <label>Create Custom Workout</label>
+    <input id="newWorkoutName" placeholder="Workout name (e.g. Upper)">
+    <input id="newExercise" placeholder="Exercise name">
+    <button onclick="addExerciseToBuilder()">Add Exercise</button>
+    <div id="builderList" class="small"></div>
+    <button onclick="saveCustomWorkout()">Save Workout</button>
+  </div>
+
 </div>
 
 <script>
+/* ---------- SEED WORKOUTS SAFELY ---------- */
 const DEFAULT_WORKOUTS={
   Push:["Bench Press","Incline DB Press","OHP","Lateral Raise","Tricep Pushdown"],
   Pull:["Barbell Row","Lat Pulldown","Rear Delt Fly","Bicep Curl"],
   Legs:["Squat","RDL","Leg Curl","Calf Raise"]
 };
 
-let workouts=JSON.parse(localStorage.getItem("workouts"))||DEFAULT_WORKOUTS;
+let workouts=JSON.parse(localStorage.getItem("workouts"));
+if(!workouts||Object.keys(workouts).length===0){
+  workouts=DEFAULT_WORKOUTS;
+  localStorage.setItem("workouts",JSON.stringify(workouts));
+}
+
 let logs=JSON.parse(localStorage.getItem("logs"))||[];
+let prs=JSON.parse(localStorage.getItem("prs"))||{};
+
+let currentWorkout="";
+let currentExercise="";
+let builder=[];
+
+const workoutSelect=document.getElementById("workoutSelect");
+const exerciseSelect=document.getElementById("exerciseSelect");
+
+const currentExerciseEl=document.getElementById("currentExercise");
+const prEl=document.getElementById("pr");
+const lastEl=document.getElementById("last");
+
+/* ---------- INIT ---------- */
+function init(){
+  workoutSelect.innerHTML="";
+  Object.keys(workouts).forEach(w=>{
+    const o=document.createElement("option");
+    o.value=w;o.textContent=w;
+    workoutSelect.appendChild(o);
+  });
+  loadExercises();
+}
+document.addEventListener("DOMContentLoaded",init);
+
+/* ---------- WORKOUT / EXERCISE ---------- */
+function loadExercises(){
+  currentWorkout=workoutSelect.value;
+  exerciseSelect.innerHTML="";
+  workouts[currentWorkout].forEach(ex=>{
+    const o=document.createElement("option");
+    o.value=ex;o.textContent=ex;
+    exerciseSelect.appendChild(o);
+  });
+  selectExercise();
+}
+
+function selectExercise(){
+  currentExercise=exerciseSelect.value;
+  updateInfo();
+}
+
+function useCustomExercise(){
+  const ex=customExercise.value.trim();
+  if(!ex)return;
+
+  if(![...exerciseSelect.options].some(o=>o.value===ex)){
+    const o=document.createElement("option");
+    o.value=ex;o.textContent=ex;
+    exerciseSelect.appendChild(o);
+  }
+  exerciseSelect.value=ex;
+  currentExercise=ex;
+  customExercise.value="";
+  updateInfo();
+}
+
+function updateInfo(){
+  currentExerciseEl.innerText=currentExercise||"—";
+  prEl.innerText=prs[currentExercise]
+    ? `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`
+    :"—";
+  const last=logs.filter(l=>l.exercise===currentExercise).slice(-1)[0];
+  lastEl.innerText=last
+    ? `${last.weight}kg x ${last.reps}`
+    :"—";
+}
+
+/* ---------- LOGGING ---------- */
+function saveSet(){
+  if(!currentExercise)return;
+
+  const w=+weight.value;
+  const r=+reps.value;
+  if(!w||!r)return;
+
+  logs.push({
+    workout:currentWorkout,
+    exercise:currentExercise,
+    weight:w,
+    reps:r,
+    date:new Date().toISOString().slice(0,10)
+  });
+  localStorage.setItem("logs",JSON.stringify(logs));
+
+  if(!prs[currentExercise]||w>prs[currentExercise].weight){
+    prs[currentExercise]={weight:w,reps:r};
+    localStorage.setItem("prs",JSON.stringify(prs));
+  }
+
+  weight.value=reps.value="";
+  updateInfo();
+}
+
+/* ---------- CUSTOM WORKOUT BUILDER ---------- */
+function addExerciseToBuilder(){
+  const ex=newExercise.value.trim();
+  if(!ex)return;
+  builder.push(ex);
+  newExercise.value="";
+  renderBuilder();
+}
+
+function renderBuilder(){
+  builderList.innerHTML=builder.map((e,i)=>`${i+1}. ${e}`).join("<br>");
+}
+
+function saveCustomWorkout(){
+  const name=newWorkoutName.value.trim();
+  if(!name||builder.length===0)return;
+  workouts[name]=[...builder];
+  localStorage.setItem("workouts",JSON.stringify(workouts));
+  builder=[];
+  newWorkoutName.value="";
+  renderBuilder();
+  init();
+}
+
+workoutSelect.onchange=loadExercises;
+exerciseSelect.onchange=selectExercise;
+</script>
+
+</body>
+</html>
