@@ -2,171 +2,241 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Training Log</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Log</title>
 
 <style>
-:root {
-  --bg: #2c2c2c;
-  --card: #3a3a3a;
-  --card-soft: #404040;
-  --accent: #f2c94c;
-  --text: #f5f5f5;
-  --muted: #bdbdbd;
-}
-
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(180deg, #2b2b2b, #262626);
-  color: var(--text);
+  background: #2f2f2f;
+  color: #f2f2f2;
 }
-
 header {
   background: #1f1f1f;
-  padding: 14px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-}
-
-header span {
-  color: var(--accent);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-}
-
-header a {
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.card {
-  background: linear-gradient(180deg, var(--card), var(--card-soft));
-  border-radius: 16px;
-  padding: 16px;
-  margin: 16px;
-  box-shadow:
-    0 10px 24px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-label {
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.3px;
-}
-
-select,
-input {
-  width: 100%;
-  padding: 13px;
-  margin-top: 10px;
-  border-radius: 12px;
-  border: none;
-  background: #1e1e1e;
-  color: var(--text);
-  font-size: 16px;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
-}
-
-select:focus,
-input:focus {
-  outline: 2px solid rgba(242,201,76,0.5);
-}
-
-button {
-  width: 100%;
   padding: 14px;
-  margin-top: 12px;
+  font-size: 20px;
+  font-weight: bold;
+}
+.container {
+  padding: 14px;
+}
+.card {
+  background: #3a3a3a;
   border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+h2 {
+  color: #f0c24b;
+  margin-top: 0;
+}
+select, input, button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 10px;
   border: none;
-  background: linear-gradient(180deg, #4a4a4a, #3a3a3a);
-  color: var(--accent);
   font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.4),
-    inset 0 1px 0 rgba(255,255,255,0.06);
 }
-
-button:active {
-  transform: scale(0.98);
+button {
+  background: #f0c24b;
+  color: #000;
+  font-weight: bold;
 }
-
-.timer {
-  font-size: 36px;
-  text-align: center;
-  margin: 14px 0;
-  font-weight: 700;
-  letter-spacing: 1px;
+.small {
+  opacity: 0.8;
+  font-size: 14px;
 }
-
-#currentExercise {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 6px 0;
-}
-
-.card div {
-  line-height: 1.6;
+.log-item {
+  background: #444;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 8px;
 }
 </style>
 </head>
 
 <body>
+<header>Training Log</header>
 
-<header>
-  <span>training log</span>
-  <a href="log.html">log</a>
-</header>
+<div class="container">
 
-<div class="card">
-  <label>Current Exercise</label>
-  <div id="currentExercise">None</div>
-  <div>PR: <span id="pr">—</span></div>
-  <div>Last: <span id="last">—</span></div>
-  <div>Set: <span id="setCount">0</span></div>
-</div>
-
-<div class="card">
-  <label>Workout</label>
-  <select id="workoutSelect"></select>
-</div>
-
-<div class="card">
-  <label>Exercise</label>
-  <select id="exerciseSelect"></select>
-  <input id="customExercise" placeholder="Or type exercise">
-  <button onclick="useCustomExercise()">Use custom exercise</button>
-</div>
-
-<div class="card">
-  <label>Log Set</label>
-  <input id="weight" type="number" placeholder="Weight (kg)">
-  <input id="reps" type="number" placeholder="Reps">
-  <button onclick="saveSet()">Save Set</button>
-</div>
-
-<div class="card">
-  <label>Rest Timer (seconds)</label>
-  <input id="restInput" type="number" value="90">
-  <div class
-
-<div class="card">
-  <label>Create Custom Workout</label>
-
-  <input id="newWorkoutName" placeholder="Workout name (e.g. Upper)">
-  <input id="newExercise" placeholder="Exercise name">
-
-  <button onclick="addExerciseToBuilder()">Add Exercise</button>
-
-  <div id="builderList" style="margin-top:10px;color:#bdbdbd"></div>
-
-  <button onclick="saveCustomWorkout()">Save Workout</button>
+  <div class="card">
+    <h2>Workout</h2>
+    <select id="workoutSelect" onchange="loadExercises()"></select>
   </div>
+
+  <div class="card">
+    <h2>Exercise</h2>
+    <select id="exerciseSelect" onchange="selectExercise()"></select>
+    <input id="customExercise" placeholder="Or type custom exercise">
+    <button onclick="useCustomExercise()">Use custom exercise</button>
+    <div class="small">Current: <span id="currentExercise">None</span></div>
+    <div class="small">PR: <span id="pr">—</span></div>
+    <div class="small">Last: <span id="last">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Log Set</h2>
+    <input id="weight" type="number" placeholder="Weight (kg)">
+    <input id="reps" type="number" placeholder="Reps">
+    <button onclick="saveSet()">Save Set</button>
+  </div>
+
+  <div class="card">
+    <h2>Create Custom Workout</h2>
+    <input id="newWorkoutName" placeholder="Workout name">
+    <input id="newExercise" placeholder="Exercise name">
+    <button onclick="addExerciseToBuilder()">Add Exercise</button>
+    <div id="builderList"></div>
+    <button onclick="saveCustomWorkout()">Save Workout</button>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div id="logContainer"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+
+let workouts = JSON.parse(localStorage.getItem("workouts")) || {
+  Push: ["Bench Press", "OHP", "Incline DB Press"],
+  Pull: ["Barbell Row", "Lat Pulldown", "RDL"],
+  Legs: ["Squat", "Leg Press", "Ham Curl"]
+};
+
+let logs = JSON.parse(localStorage.getItem("logs")) || [];
+let prs = JSON.parse(localStorage.getItem("prs")) || {};
+
+let currentWorkout = "";
+let currentExercise = "";
+let builder = [];
+
+/* ---------- INIT ---------- */
+
+function init() {
+  const w = document.getElementById("workoutSelect");
+  w.innerHTML = "";
+  Object.keys(workouts).forEach(k => {
+    const o = document.createElement("option");
+    o.value = k;
+    o.textContent = k;
+    w.appendChild(o);
+  });
+  loadExercises();
+  renderLog();
+}
+init();
+
+/* ---------- WORKOUT / EXERCISE ---------- */
+
+function loadExercises() {
+  currentWorkout = workoutSelect.value;
+  const e = document.getElementById("exerciseSelect");
+  e.innerHTML = "";
+  workouts[currentWorkout].forEach(x => {
+    const o = document.createElement("option");
+    o.value = x;
+    o.textContent = x;
+    e.appendChild(o);
+  });
+  selectExercise();
+}
+
+function selectExercise() {
+  currentExercise = exerciseSelect.value;
+  updateExerciseInfo();
+}
+
+function useCustomExercise() {
+  const v = customExercise.value.trim();
+  if (!v) return;
+  currentExercise = v;
+  updateExerciseInfo();
+}
+
+function updateExerciseInfo() {
+  document.getElementById("currentExercise").innerText = currentExercise || "None";
+  document.getElementById("pr").innerText =
+    prs[currentExercise]
+      ? `${prs[currentExercise].weight}kg x ${prs[currentExercise].reps}`
+      : "—";
+  const last = logs.filter(l => l.exercise === currentExercise).slice(-1)[0];
+  document.getElementById("last").innerText =
+    last ? `${last.weight}kg x ${last.reps}` : "—";
+}
+
+/* ---------- LOGGING ---------- */
+
+function saveSet() {
+  if (!currentExercise) return;
+  const w = Number(weight.value);
+  const r = Number(reps.value);
+  if (!w || !r) return;
+
+  const entry = {
+    date: new Date().toISOString().slice(0,10),
+    workout: currentWorkout,
+    exercise: currentExercise,
+    weight: w,
+    reps: r
+  };
+
+  logs.push(entry);
+  localStorage.setItem("logs", JSON.stringify(logs));
+
+  if (!prs[currentExercise] || w > prs[currentExercise].weight) {
+    prs[currentExercise] = { weight: w, reps: r };
+    localStorage.setItem("prs", JSON.stringify(prs));
+  }
+
+  weight.value = reps.value = "";
+  updateExerciseInfo();
+  renderLog();
+}
+
+/* ---------- LOG VIEW ---------- */
+
+function renderLog() {
+  const c = document.getElementById("logContainer");
+  c.innerHTML = "";
+  logs.slice().reverse().forEach(l => {
+    const d = document.createElement("div");
+    d.className = "log-item";
+    d.innerHTML = `<b>${l.exercise}</b><br>${l.weight}kg x ${l.reps}<br><span class="small">${l.workout} — ${l.date}</span>`;
+    c.appendChild(d);
+  });
+}
+
+/* ---------- CUSTOM WORKOUT BUILDER ---------- */
+
+function addExerciseToBuilder() {
+  const e = newExercise.value.trim();
+  if (!e) return;
+  builder.push(e);
+  newExercise.value = "";
+  renderBuilder();
+}
+
+function renderBuilder() {
+  builderList.innerHTML = builder.map((e,i)=>`${i+1}. ${e}`).join("<br>");
+}
+
+function saveCustomWorkout() {
+  const name = newWorkoutName.value.trim();
+  if (!name || builder.length === 0) return;
+  workouts[name] = [...builder];
+  localStorage.setItem("workouts", JSON.stringify(workouts));
+  builder = [];
+  newWorkoutName.value = "";
+  renderBuilder();
+  init();
+}
+</script>
+
+</body>
+</html>
