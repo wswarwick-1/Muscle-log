@@ -133,9 +133,53 @@ button{
 <script>
 /* ---------- SEED WORKOUTS SAFELY ---------- */
 const DEFAULT_WORKOUTS={
-  Push:["Bench Press","Incline DB Press","OHP","Lateral Raise","Tricep Pushdown"],
-  Pull:["Barbell Row","Lat Pulldown","Rear Delt Fly","Bicep Curl"],
-  Legs:["Squat","RDL","Leg Curl","Calf Raise"]
+  Push:const DEFAULT_WORKOUTS = {
+  Push: [
+    "Bench Press",
+    "Incline DB Press",
+    "OHP",
+    "Lateral Raise",
+    "Tricep Pushdown"
+  ],
+
+  Pull: [
+    "Barbell Row",
+    "Lat Pulldown",
+    "Rear Delt Fly",
+    "Bicep Curl"
+  ],
+
+  Legs: [
+    "Squat",
+    "RDL",
+    "Leg Curl",
+    "Calf Raise"
+  ],
+
+  "Powerlifting – Squat": [
+    "Back Squat",
+    "Paused Squat",
+    "Romanian Deadlift",
+    "Hack Squat",
+    "Core"
+  ],
+
+  "Powerlifting – Bench": [
+    "Bench Press",
+    "Close Grip Bench",
+    "Overhead Press",
+    "Barbell Row",
+    "Triceps"
+  ],
+
+  "Powerlifting – Deadlift": [
+    "Deadlift",
+    "Paused Deadlift",
+    "Front Squat",
+    "Hamstring Curl",
+    "Upper Back"
+  ]
+};]
 };
 
 let workouts=JSON.parse(localStorage.getItem("workouts"));
@@ -270,4 +314,5 @@ exerciseSelect.onchange=selectExercise;
 
 </body>
 </html>
+
 
