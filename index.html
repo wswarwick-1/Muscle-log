@@ -200,10 +200,25 @@ function updateInfo(){
   const last=logs.filter(l=>l.exercise===ex).slice(-1)[0];
   const pr=prs[ex];
 
+  let percentMarkup="";
+
+  if(pr){
+    const percentages=[70,75,80,85,90];
+    percentMarkup = "<br><strong>Auto %:</strong><br>";
+    percentages.forEach(p=>{
+      const weight = Math.round((pr.weight * (p/100)) / 2.5) * 2.5;
+      percentMarkup += `
+        <button onclick="autoFill(${weight})" style="margin-top:6px">
+          ${p}% — ${weight}kg
+        </button>`;
+    });
+  }
+
   document.getElementById("currentInfo").innerHTML=
     `Current: ${ex}<br>
      PR: ${pr? pr.weight+"kg x "+pr.reps:"—"}<br>
-     Last: ${last? last.weight+"kg x "+last.reps:"—"}`;
+     Last: ${last? last.weight+"kg x "+last.reps:"—"}
+     ${percentMarkup}`;
 }
 
 function saveSet(){
@@ -300,8 +315,12 @@ document.getElementById("workoutSelect").onchange=loadExercises;
 document.getElementById("exerciseSelect").onchange=updateInfo;
 
 init();
-
+  
+function autoFill(weight){
+  document.getElementById("weight").value = weight;
+}
 </script>
 
 </body>
 </html>
+
