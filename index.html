@@ -252,27 +252,41 @@ function toggleLog(){
 }
 
 function renderLog(){
-  logView.innerHTML="";
-  if(logs.length===0){
-    logView.innerHTML="<div class='card'>No logs yet</div>";
+  logView.innerHTML = "";
+
+  if(logs.length === 0){
+    logView.innerHTML = "<div class='card'>No logs yet</div>";
     return;
   }
 
-  const grouped={};
+  const grouped = {};
+
+  // Group by workout
   logs.slice().reverse().forEach(l=>{
-    if(!grouped[l.workout])grouped[l.workout]=[];
+    if(!grouped[l.workout]) grouped[l.workout] = [];
     grouped[l.workout].push(l);
   });
 
-  Object.keys(grouped).forEach(w=>{
-    const c=document.createElement("div");
-    c.className="card";
-    c.innerHTML=`<label>${w}</label>`;
-    grouped[w].forEach(l=>{
-      c.innerHTML+=` attaching card markup `;
+  Object.keys(grouped).forEach(workoutName=>{
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    let html = `<label>${workoutName}</label>`;
+
+    grouped[workoutName].forEach(l=>{
+      html += `
+        <div class="list-item">
+          <strong>${l.exercise}</strong><br>
+          ${l.weight}kg x ${l.reps}
+        </div>
+      `;
     });
-    logView.appendChild(c);
+
+    card.innerHTML = html;
+    logView.appendChild(card);
   });
+}
 }
 
 function addExercise(){
@@ -309,3 +323,4 @@ exerciseSelect.onchange=selectExercise;
 
 </body>
 </html>
+
