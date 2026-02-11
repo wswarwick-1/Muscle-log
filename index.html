@@ -319,8 +319,45 @@ init();
 function autoFill(weight){
   document.getElementById("weight").value = weight;
 }
+  function roundToPlates(weight){
+  return Math.round(weight / 2.5) * 2.5;
+}
+
+function generateBlock(){
+  const ex = document.getElementById("exerciseSelect").value;
+  const pr = prs[ex];
+
+  if(!pr){
+    alert("No PR found for this lift.");
+    return;
+  }
+
+  const block = [
+    {week:1, percent:75, reps:5},
+    {week:2, percent:80, reps:3},
+    {week:3, percent:85, reps:2},
+    {week:4, percent:60, reps:5}
+  ];
+
+  let html = "<strong>4 Week Block:</strong><br>";
+
+  block.forEach(w=>{
+    const weight = roundToPlates(pr.weight * (w.percent/100));
+    html += `
+      <div style="margin-top:8px">
+        Week ${w.week}: 
+        <button onclick="autoFill(${weight})">
+          ${w.percent}% — ${weight}kg × ${w.reps}
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("blockDisplay").innerHTML = html;
+}
 </script>
 
 </body>
 </html>
+
 
