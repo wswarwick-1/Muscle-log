@@ -250,42 +250,66 @@ function toggleLog(){
   logView.style.display = logView.style.display==="none"?"block":"none";
   renderLog();
 }
-
 function renderLog(){
   logView.innerHTML = "";
 
-  if(logs.length === 0){
+  if(!logs || logs.length === 0){
     logView.innerHTML = "<div class='card'>No logs yet</div>";
     return;
   }
 
+  // Sort newest first
+  const sorted = logs.slice().sort((a,b)=>{
+    return new Date(b.date) - new Date(a.date);
+  });
+
   const grouped = {};
 
-  // Group by workout
-  logs.slice().reverse().forEach(l=>{
-    if(!grouped[l.workout]) grouped[l.workout] = [];
-    grouped[l.workout].push(l);
+  // Group by workout then by date
+  sorted.forEach(l=>{
+    if(!grouped[l.workout]) grouped[l.workout] = {};
+    if(!grouped[l.workout][l.date]) grouped[l.workout][l.date] = [];
+    grouped[l.workout][l.date].push(l);
   });
 
   Object.keys(grouped).forEach(workoutName=>{
 
-    const card = document.createElement("div");
-    card.className = "card";
+    const workoutCard = document.createElement("div");
+    workoutCard.className = "card";
 
     let html = `<label>${workoutName}</label>`;
 
-    grouped[workoutName].forEach(l=>{
+    Object.keys(grouped[workoutName]).forEach(date=>{
+
       html += `
-        <div class="list-item">
-          <strong>${l.exercise}</strong><br>
-          ${l.weight}kg x ${l.reps}
+        <div style="margin-top:12px;font-weight:bold;color:#e6c15a;">
+          ${date}
         </div>
       `;
+
+      grouped[workoutName][date].forEach(l=>{
+
+        const isPR =
+          prs[l.exercise] &&
+          prs[l.exercise].weight == l.weight &&
+          prs[l.exercise].reps == l.reps;
+
+        html += `
+          <div class="list-item" style="margin-top:8px;">
+            <strong>${l.exercise}</strong>
+            ${isPR ? "<span class='badge'>PR</span>" : ""}
+            <br>
+            ${l.weight}kg x ${l.reps}
+          </div>
+        `;
+      });
+
     });
 
-    card.innerHTML = html;
-    logView.appendChild(card);
+    workoutCard.innerHTML = html;
+    logView.appendChild(workoutCard);
   });
+}
 }
 
 function addExercise(){
@@ -322,5 +346,6 @@ exerciseSelect.onchange=selectExercise;
 
 </body>
 </html>
+
 
 
