@@ -218,7 +218,9 @@ function updateInfo(){
     `Current: ${ex}<br>
      PR: ${pr? pr.weight+"kg x "+pr.reps:"—"}<br>
      Last: ${last? last.weight+"kg x "+last.reps:"—"}
-     ${percentMarkup}`;
+
+     <button onclick="generateBlock()">Generate 4 Week Block</button>
+<div id="blockDisplay" style="margin-top:10px;"></div>${percentMarkup}`;
 }
 
 function saveSet(){
@@ -359,5 +361,6 @@ function generateBlock(){
 
 </body>
 </html>
+
 
 
