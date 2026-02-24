@@ -325,7 +325,39 @@ const DEFAULT_WORKOUTS={
 };
 
 let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS;
-let sessions = JSON.parse(localStorage.getItem("sessions")) || [];
+let let sessions = JSON.parse(localStorage.getItem("sessions")) || [];
+
+if(sessions.length === 0){
+  const oldLogs = JSON.parse(localStorage.getItem("logs")) || [];
+
+  if(oldLogs.length > 0){
+    // Convert old set-based logs to new session format
+    const converted = {};
+
+    oldLogs.forEach(l=>{
+      const key = l.date + "_" + l.workout;
+
+      if(!converted[key]){
+        converted[key] = {
+          date: l.date,
+          workout: l.workout,
+          exercises: []
+        };
+      }
+
+      let ex = converted[key].exercises.find(e=>e.name===l.exercise);
+      if(!ex){
+        ex = { name:l.exercise, sets:[] };
+        converted[key].exercises.push(ex);
+      }
+
+      ex.sets.push({ weight:l.weight, reps:l.reps });
+    });
+
+    sessions = Object.values(converted);
+    localStorage.setItem("sessions", JSON.stringify(sessions));
+  }
+}
 let prs = JSON.parse(localStorage.getItem("prs")) || {};
 
 let currentSession = null;
@@ -459,6 +491,7 @@ init();
 
 </body>
 </html>
+
 
 
 
