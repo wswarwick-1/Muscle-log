@@ -317,50 +317,149 @@ document.getElementById("workoutSelect").onchange=loadExercises;
 document.getElementById("exerciseSelect").onchange=updateInfo;
 
 init();
-  
-function autoFill(weight){
-  document.getElementById("weight").value = weight;
-}
-  function roundToPlates(weight){
-  return Math.round(weight / 2.5) * 2.5;
+const DEFAULT_WORKOUTS={
+  "Push":["Bench Press","Overhead Press","Incline DB Press","Lateral Raises","Tricep Pushdown"],
+  "Pull":["Deadlift","Barbell Row","Lat Pulldown","Face Pull","Barbell Curl"],
+  "Legs":["Squat","Romanian Deadlift","Leg Press","Hamstring Curl","Calf Raise"],
+  "Powerlifting Program":["Squat","Bench Press","Deadlift"]
+};
+
+let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS;
+let sessions = JSON.parse(localStorage.getItem("sessions")) || [];
+let prs = JSON.parse(localStorage.getItem("prs")) || {};
+
+let currentSession = null;
+
+function init(){
+  const workoutSelect=document.getElementById("workoutSelect");
+  workoutSelect.innerHTML="";
+  Object.keys(workouts).forEach(w=>{
+    const opt=document.createElement("option");
+    opt.value=w;
+    opt.textContent=w;
+    workoutSelect.appendChild(opt);
+  });
+  loadExercises();
 }
 
-function generateBlock(){
-  const ex = document.getElementById("exerciseSelect").value;
-  const pr = prs[ex];
+function loadExercises(){
+  const workout=document.getElementById("workoutSelect").value;
+  const exerciseSelect=document.getElementById("exerciseSelect");
+  exerciseSelect.innerHTML="";
+  workouts[workout].forEach(ex=>{
+    const opt=document.createElement("option");
+    opt.value=ex;
+    opt.textContent=ex;
+    exerciseSelect.appendChild(opt);
+  });
+}
 
-  if(!pr){
-    alert("No PR found for this lift.");
-    return;
+function startSession(){
+  const workout=document.getElementById("workoutSelect").value;
+  currentSession={
+    date:new Date().toISOString().split("T")[0],
+    workout,
+    exercises:[]
+  };
+  document.getElementById("liveSession").innerHTML="";
+}
+
+function addSet(){
+  if(!currentSession) startSession();
+
+  const ex=document.getElementById("exerciseSelect").value;
+  const weight=parseFloat(document.getElementById("weight").value);
+  const reps=parseInt(document.getElementById("reps").value);
+  if(!weight||!reps) return;
+
+  let exerciseObj=currentSession.exercises.find(e=>e.name===ex);
+  if(!exerciseObj){
+    exerciseObj={name:ex,sets:[]};
+    currentSession.exercises.push(exerciseObj);
   }
 
-  const block = [
-    {week:1, percent:75, reps:5},
-    {week:2, percent:80, reps:3},
-    {week:3, percent:85, reps:2},
-    {week:4, percent:60, reps:5}
-  ];
+  exerciseObj.sets.push({weight,reps});
 
-  let html = "<strong>4 Week Block:</strong><br>";
+  if(!prs[ex]||weight>prs[ex].weight){
+    prs[ex]={weight,reps};
+    localStorage.setItem("prs",JSON.stringify(prs));
+  }
 
-  block.forEach(w=>{
-    const weight = roundToPlates(pr.weight * (w.percent/100));
-    html += `
-      <div style="margin-top:8px">
-        Week ${w.week}: 
-        <button onclick="autoFill(${weight})">
-          ${w.percent}% — ${weight}kg × ${w.reps}
-        </button>
-      </div>
-    `;
-  });
-
-  document.getElementById("blockDisplay").innerHTML = html;
+  document.getElementById("weight").value="";
+  document.getElementById("reps").value="";
+  renderLiveSession();
 }
+
+function renderLiveSession(){
+  const container=document.getElementById("liveSession");
+  container.innerHTML="";
+
+  currentSession.exercises.forEach(ex=>{
+    container.innerHTML+=`<div class="log-workout">${ex.name}</div>`;
+    ex.sets.forEach((s,i)=>{
+      container.innerHTML+=`
+        <div class="log-entry">
+          Set ${i+1}: ${s.weight}kg x ${s.reps}
+        </div>`;
+    });
+  });
+}
+
+function finishWorkout(){
+  if(!currentSession) return;
+  sessions.push(currentSession);
+  localStorage.setItem("sessions",JSON.stringify(sessions));
+  currentSession=null;
+  document.getElementById("liveSession").innerHTML="";
+  alert("Workout Saved");
+}
+
+function togglePage(){
+  const main=document.getElementById("mainPage");
+  const log=document.getElementById("logPage");
+  if(main.style.display==="none"){
+    main.style.display="block";
+    log.style.display="none";
+  }else{
+    main.style.display="none";
+    log.style.display="block";
+    renderLog();
+  }
+}
+
+function renderLog(){
+  const container=document.getElementById("logPage");
+  container.innerHTML="";
+
+  sessions.slice().reverse().forEach(session=>{
+    container.innerHTML+=`
+      <div class="log-workout">
+        ${session.workout} — ${session.date}
+      </div>`;
+
+    session.exercises.forEach(ex=>{
+      container.innerHTML+=`<div class="log-date">${ex.name}</div>`;
+
+      ex.sets.forEach(s=>{
+        const isPR=prs[ex.name] && prs[ex.name].weight===s.weight;
+        container.innerHTML+=`
+          <div class="log-entry">
+            ${s.weight}kg x ${s.reps}
+            ${isPR?'<span class="pr-badge">PR</span>':''}
+          </div>`;
+      });
+    });
+  });
+}
+
+document.getElementById("workoutSelect").onchange=loadExercises;
+
+init();
 </script>
 
 </body>
 </html>
+
 
 
 
