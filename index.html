@@ -12,25 +12,26 @@ body{
   background:#111;
   color:#eee;
 }
+
 header{
   background:#000;
-  padding:20px;
+  padding:18px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
   font-weight:bold;
   font-size:20px;
 }
-.gold{ color:#f2c94c; }
+
+.gold{ color:#f2c94c; cursor:pointer; }
 
 .container{ padding:20px; }
 
 .card{
   background:#1c1c1c;
-  padding:20px;
+  padding:18px;
   margin-bottom:20px;
   border-radius:14px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.5);
+  box-shadow:0 4px 18px rgba(0,0,0,0.5);
 }
 
 select,input{
@@ -46,36 +47,35 @@ select,input{
 button{
   width:100%;
   padding:14px;
-  margin-top:15px;
+  margin-top:12px;
   background:#f2c94c;
   border:none;
   border-radius:10px;
   font-weight:bold;
 }
 
-.log-workout{
-  font-size:20px;
+.session-title{
+  font-size:18px;
   margin-top:20px;
   color:#f2c94c;
 }
 
-.log-date{
-  font-size:14px;
+.exercise-title{
   margin-top:10px;
-  color:#aaa;
+  font-weight:bold;
 }
 
-.log-entry{
+.set-line{
   background:#181818;
-  padding:12px;
-  margin-top:8px;
+  padding:10px;
+  margin-top:6px;
   border-radius:8px;
 }
 
-.pr-badge{
+.pr{
   background:#f2c94c;
   color:#000;
-  padding:3px 8px;
+  padding:3px 6px;
   border-radius:6px;
   font-size:12px;
   margin-left:6px;
@@ -85,414 +85,22 @@ button{
 <body>
 
 <header>
-  Training Log
-  <span class="gold" onclick="togglePage()">Log</span>
+Training Log
+<span class="gold" onclick="togglePage()">Log</span>
 </header>
 
 <div class="container" id="mainPage">
 
 <div class="card">
-  <label>Workout</label>
-  <select id="workoutSelect"></select>
+<label>Workout</label>
+<select id="workoutSelect"></select>
 </div>
 
 <div class="card">
-  <label>Exercise</label>
-  <select id="exerciseSelect"></select>
-  <input id="customExercise" placeholder="Type custom exercise">
-  <button onclick="useCustomExercise()">Use custom exercise</button>
-
-  <p id="currentInfo">Current: —<br>PR: —<br>Last: —</p>
+<label>Exercise</label>
+<select id="exerciseSelect"></select>
 </div>
 
 <div class="card">
-  <label>Log Set</label>
-  <input id="weight" type="number" placeholder="Weight (kg)">
-  <input id="reps" type="number" placeholder="Reps">
-  <button onclick="saveSet()">Save Set</button>
-</div>
-
-<div class="card">
-  <label>Create Custom Workout</label>
-  <input id="newWorkoutName" placeholder="Workout name">
-  <input id="newExercise" placeholder="Exercise name">
-  <button onclick="addExerciseToBuilder()">Add Exercise</button>
-  <div id="builderPreview"></div>
-  <button onclick="saveCustomWorkout()">Save Workout</button>
-</div>
-
-</div>
-
-<div class="container" id="logPage" style="display:none"></div>
-
-<script>
-
-const DEFAULT_WORKOUTS={
-  "Push":["Bench Press","Overhead Press","Incline DB Press","Lateral Raises","Tricep Pushdown"],
-  "Pull":["Deadlift","Barbell Row","Lat Pulldown","Face Pull","Barbell Curl"],
-  "Legs":["Squat","Romanian Deadlift","Leg Press","Hamstring Curl","Calf Raise"],
-  "Powerlifting Program":["Squat","Bench Press","Deadlift"]
-};
-
-let workouts;
-let logs;
-let prs;
-
-function safeLoad(key, fallback){
-  try{
-    return JSON.parse(localStorage.getItem(key)) || fallback;
-  }catch{
-    return fallback;
-  }
-}
-
-function init(){
-
-  workouts = safeLoad("workouts", DEFAULT_WORKOUTS);
-  if(Object.keys(workouts).length===0){
-    workouts=DEFAULT_WORKOUTS;
-    localStorage.setItem("workouts",JSON.stringify(workouts));
-  }
-
-  logs = safeLoad("logs", []);
-  prs = safeLoad("prs", {});
-
-  const workoutSelect=document.getElementById("workoutSelect");
-  workoutSelect.innerHTML="";
-  Object.keys(workouts).forEach(w=>{
-    const opt=document.createElement("option");
-    opt.value=w;
-    opt.textContent=w;
-    workoutSelect.appendChild(opt);
-  });
-
-  loadExercises();
-}
-
-function loadExercises(){
-  const workout=document.getElementById("workoutSelect").value;
-  const exerciseSelect=document.getElementById("exerciseSelect");
-  exerciseSelect.innerHTML="";
-  workouts[workout].forEach(ex=>{
-    const opt=document.createElement("option");
-    opt.value=ex;
-    opt.textContent=ex;
-    exerciseSelect.appendChild(opt);
-  });
-  updateInfo();
-}
-
-function useCustomExercise(){
-  const val=document.getElementById("customExercise").value.trim();
-  if(!val)return;
-  const select=document.getElementById("exerciseSelect");
-  const opt=document.createElement("option");
-  opt.value=val;
-  opt.textContent=val;
-  select.appendChild(opt);
-  select.value=val;
-  document.getElementById("customExercise").value="";
-  updateInfo();
-}
-
-function updateInfo(){
-  const ex=document.getElementById("exerciseSelect").value;
-  const last=logs.filter(l=>l.exercise===ex).slice(-1)[0];
-  const pr=prs[ex];
-
-  let percentMarkup="";
-
-  if(pr){
-    const percentages=[70,75,80,85,90];
-    percentMarkup = "<br><strong>Auto %:</strong><br>";
-    percentages.forEach(p=>{
-      const weight = Math.round((pr.weight * (p/100)) / 2.5) * 2.5;
-      percentMarkup += `
-        <button onclick="autoFill(${weight})" style="margin-top:6px">
-          ${p}% — ${weight}kg
-        </button>`;
-    });
-  }
-
-  document.getElementById("currentInfo").innerHTML=
-    `Current: ${ex}<br>
-     PR: ${pr? pr.weight+"kg x "+pr.reps:"—"}<br>
-     Last: ${last? last.weight+"kg x "+last.reps:"—"}
-
-     <button onclick="generateBlock()">Generate 4 Week Block</button>
-<div id="blockDisplay" style="margin-top:10px;"></div>${percentMarkup}`;
-}
-
-function saveSet(){
-  const workout=document.getElementById("workoutSelect").value;
-  const exercise=document.getElementById("exerciseSelect").value;
-  const weight=parseFloat(document.getElementById("weight").value);
-  const reps=parseInt(document.getElementById("reps").value);
-  if(!weight||!reps)return;
-
-  const today=new Date().toISOString().split("T")[0];
-
-  logs.push({workout,exercise,weight,reps,date:today});
-  localStorage.setItem("logs",JSON.stringify(logs));
-
-  if(!prs[exercise]||weight>prs[exercise].weight){
-    prs[exercise]={weight,reps};
-    localStorage.setItem("prs",JSON.stringify(prs));
-  }
-
-  document.getElementById("weight").value="";
-  document.getElementById("reps").value="";
-  updateInfo();
-}
-
-function togglePage(){
-  const main=document.getElementById("mainPage");
-  const log=document.getElementById("logPage");
-  if(main.style.display==="none"){
-    main.style.display="block";
-    log.style.display="none";
-  }else{
-    main.style.display="none";
-    log.style.display="block";
-    renderLog();
-  }
-}
-
-function renderLog(){
-  const container=document.getElementById("logPage");
-  container.innerHTML="";
-
-  if(logs.length===0){
-    container.innerHTML="<p>No logs yet</p>";
-    return;
-  }
-
-  const grouped={};
-
-  logs.forEach(l=>{
-    if(!grouped[l.workout])grouped[l.workout]={};
-    if(!grouped[l.workout][l.date])grouped[l.workout][l.date]=[];
-    grouped[l.workout][l.date].push(l);
-  });
-
-  Object.keys(grouped).reverse().forEach(workout=>{
-    container.innerHTML+=`<div class="log-workout">${workout}</div>`;
-    Object.keys(grouped[workout]).reverse().forEach(date=>{
-      container.innerHTML+=`<div class="log-date">${date}</div>`;
-      grouped[workout][date].forEach(l=>{
-        const isPR=prs[l.exercise] && prs[l.exercise].weight===l.weight;
-        container.innerHTML+=`
-          <div class="log-entry">
-            ${l.exercise} — ${l.weight}kg x ${l.reps}
-            ${isPR?'<span class="pr-badge">PR</span>':''}
-          </div>`;
-      });
-    });
-  });
-}
-
-let builder=[];
-
-function addExerciseToBuilder(){
-  const ex=document.getElementById("newExercise").value.trim();
-  if(!ex)return;
-  builder.push(ex);
-  document.getElementById("newExercise").value="";
-  document.getElementById("builderPreview").innerHTML=
-    builder.map((e,i)=>`${i+1}. ${e}`).join("<br>");
-}
-
-function saveCustomWorkout(){
-  const name=document.getElementById("newWorkoutName").value.trim();
-  if(!name||builder.length===0)return;
-  workouts[name]=[...builder];
-  localStorage.setItem("workouts",JSON.stringify(workouts));
-  builder=[];
-  document.getElementById("builderPreview").innerHTML="";
-  document.getElementById("newWorkoutName").value="";
-  init();
-}
-
-document.getElementById("workoutSelect").onchange=loadExercises;
-document.getElementById("exerciseSelect").onchange=updateInfo;
-
-init();
-const DEFAULT_WORKOUTS={
-  "Push":["Bench Press","Overhead Press","Incline DB Press","Lateral Raises","Tricep Pushdown"],
-  "Pull":["Deadlift","Barbell Row","Lat Pulldown","Face Pull","Barbell Curl"],
-  "Legs":["Squat","Romanian Deadlift","Leg Press","Hamstring Curl","Calf Raise"],
-  "Powerlifting Program":["Squat","Bench Press","Deadlift"]
-};
-
-let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS;
-let let sessions = JSON.parse(localStorage.getItem("sessions")) || [];
-
-if(sessions.length === 0){
-  const oldLogs = JSON.parse(localStorage.getItem("logs")) || [];
-
-  if(oldLogs.length > 0){
-    // Convert old set-based logs to new session format
-    const converted = {};
-
-    oldLogs.forEach(l=>{
-      const key = l.date + "_" + l.workout;
-
-      if(!converted[key]){
-        converted[key] = {
-          date: l.date,
-          workout: l.workout,
-          exercises: []
-        };
-      }
-
-      let ex = converted[key].exercises.find(e=>e.name===l.exercise);
-      if(!ex){
-        ex = { name:l.exercise, sets:[] };
-        converted[key].exercises.push(ex);
-      }
-
-      ex.sets.push({ weight:l.weight, reps:l.reps });
-    });
-
-    sessions = Object.values(converted);
-    localStorage.setItem("sessions", JSON.stringify(sessions));
-  }
-}
-let prs = JSON.parse(localStorage.getItem("prs")) || {};
-
-let currentSession = null;
-
-function init(){
-  const workoutSelect=document.getElementById("workoutSelect");
-  workoutSelect.innerHTML="";
-  Object.keys(workouts).forEach(w=>{
-    const opt=document.createElement("option");
-    opt.value=w;
-    opt.textContent=w;
-    workoutSelect.appendChild(opt);
-  });
-  loadExercises();
-}
-
-function loadExercises(){
-  const workout=document.getElementById("workoutSelect").value;
-  const exerciseSelect=document.getElementById("exerciseSelect");
-  exerciseSelect.innerHTML="";
-  workouts[workout].forEach(ex=>{
-    const opt=document.createElement("option");
-    opt.value=ex;
-    opt.textContent=ex;
-    exerciseSelect.appendChild(opt);
-  });
-}
-
-function startSession(){
-  const workout=document.getElementById("workoutSelect").value;
-  currentSession={
-    date:new Date().toISOString().split("T")[0],
-    workout,
-    exercises:[]
-  };
-  document.getElementById("liveSession").innerHTML="";
-}
-
-function addSet(){
-  if(!currentSession) startSession();
-
-  const ex=document.getElementById("exerciseSelect").value;
-  const weight=parseFloat(document.getElementById("weight").value);
-  const reps=parseInt(document.getElementById("reps").value);
-  if(!weight||!reps) return;
-
-  let exerciseObj=currentSession.exercises.find(e=>e.name===ex);
-  if(!exerciseObj){
-    exerciseObj={name:ex,sets:[]};
-    currentSession.exercises.push(exerciseObj);
-  }
-
-  exerciseObj.sets.push({weight,reps});
-
-  if(!prs[ex]||weight>prs[ex].weight){
-    prs[ex]={weight,reps};
-    localStorage.setItem("prs",JSON.stringify(prs));
-  }
-
-  document.getElementById("weight").value="";
-  document.getElementById("reps").value="";
-  renderLiveSession();
-}
-
-function renderLiveSession(){
-  const container=document.getElementById("liveSession");
-  container.innerHTML="";
-
-  currentSession.exercises.forEach(ex=>{
-    container.innerHTML+=`<div class="log-workout">${ex.name}</div>`;
-    ex.sets.forEach((s,i)=>{
-      container.innerHTML+=`
-        <div class="log-entry">
-          Set ${i+1}: ${s.weight}kg x ${s.reps}
-        </div>`;
-    });
-  });
-}
-
-function finishWorkout(){
-  if(!currentSession) return;
-  sessions.push(currentSession);
-  localStorage.setItem("sessions",JSON.stringify(sessions));
-  currentSession=null;
-  document.getElementById("liveSession").innerHTML="";
-  alert("Workout Saved");
-}
-
-function togglePage(){
-  const main=document.getElementById("mainPage");
-  const log=document.getElementById("logPage");
-  if(main.style.display==="none"){
-    main.style.display="block";
-    log.style.display="none";
-  }else{
-    main.style.display="none";
-    log.style.display="block";
-    renderLog();
-  }
-}
-
-function renderLog(){
-  const container=document.getElementById("logPage");
-  container.innerHTML="";
-
-  sessions.slice().reverse().forEach(session=>{
-    container.innerHTML+=`
-      <div class="log-workout">
-        ${session.workout} — ${session.date}
-      </div>`;
-
-    session.exercises.forEach(ex=>{
-      container.innerHTML+=`<div class="log-date">${ex.name}</div>`;
-
-      ex.sets.forEach(s=>{
-        const isPR=prs[ex.name] && prs[ex.name].weight===s.weight;
-        container.innerHTML+=`
-          <div class="log-entry">
-            ${s.weight}kg x ${s.reps}
-            ${isPR?'<span class="pr-badge">PR</span>':''}
-          </div>`;
-      });
-    });
-  });
-}
-
-document.getElementById("workoutSelect").onchange=loadExercises;
-
-init();
-</script>
-
-</body>
-</html>
-
-
-
-
-
+<label>Add Set</label>
+<input id="weight" type="number" placeholder="Weight (kg
