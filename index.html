@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Training Log</title>
 
 <style>
@@ -20,7 +20,7 @@ color:#f5c542;
 select,input,button{
 width:100%;
 padding:10px;
-margin:5px 0;
+margin:6px 0;
 border-radius:6px;
 border:none;
 font-size:16px;
@@ -48,12 +48,24 @@ color:#f5c542;
 margin-bottom:10px;
 }
 
+.hidden{
+display:none;
+}
+
 </style>
 </head>
 
 <body>
 
 <h1>Training Log</h1>
+
+<button onclick="showPage('workoutPage')">Workout</button>
+<button onclick="showPage('logPage')">Log</button>
+<button onclick="showPage('customPage')">Custom Workouts</button>
+
+<!-- WORKOUT PAGE -->
+
+<div id="workoutPage">
 
 <select id="workoutSelect"></select>
 
@@ -66,14 +78,39 @@ margin-bottom:10px;
 <input id="reps" placeholder="Reps">
 
 <button onclick="addSet()">Add Set</button>
-
 <button onclick="saveSession()">Finish Workout</button>
-
-<button onclick="showLog()">View Log</button>
 
 <div id="sets"></div>
 
+</div>
+
+<!-- LOG PAGE -->
+
+<div id="logPage" class="hidden">
+
+<h2>Workout Log</h2>
+
 <div id="log"></div>
+
+</div>
+
+<!-- CUSTOM WORKOUT PAGE -->
+
+<div id="customPage" class="hidden">
+
+<h2>Create Workout</h2>
+
+<input id="newWorkoutName" placeholder="Workout Name">
+
+<input id="newExercise" placeholder="Exercise Name">
+
+<button onclick="addExercise()">Add Exercise</button>
+
+<div id="exerciseList"></div>
+
+<button onclick="saveCustomWorkout()">Save Workout</button>
+
+</div>
 
 <script>
 
@@ -106,12 +143,11 @@ Legs:[
 }
 
 let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS
-
 let sessions = JSON.parse(localStorage.getItem("sessions")) || []
-
 let prs = JSON.parse(localStorage.getItem("prs")) || {}
 
 let currentSets = []
+let customExercises = []
 
 function saveData(){
 localStorage.setItem("workouts",JSON.stringify(workouts))
@@ -119,16 +155,31 @@ localStorage.setItem("sessions",JSON.stringify(sessions))
 localStorage.setItem("prs",JSON.stringify(prs))
 }
 
+function showPage(page){
+
+document.getElementById("workoutPage").classList.add("hidden")
+document.getElementById("logPage").classList.add("hidden")
+document.getElementById("customPage").classList.add("hidden")
+
+document.getElementById(page).classList.remove("hidden")
+
+if(page==="logPage") renderLog()
+
+}
+
 function loadWorkouts(){
 
-let select = document.getElementById("workoutSelect")
+let select=document.getElementById("workoutSelect")
 select.innerHTML=""
 
 Object.keys(workouts).forEach(w=>{
+
 let o=document.createElement("option")
 o.value=w
 o.textContent=w
+
 select.appendChild(o)
+
 })
 
 loadExercises()
@@ -143,10 +194,13 @@ let exSelect=document.getElementById("exerciseSelect")
 exSelect.innerHTML=""
 
 workouts[workout].forEach(e=>{
+
 let o=document.createElement("option")
 o.value=e
 o.textContent=e
+
 exSelect.appendChild(o)
+
 })
 
 showPreviousBest()
@@ -203,7 +257,7 @@ currentSets.forEach((s,i)=>{
 
 box.innerHTML+=`
 <div class="card">
-Set ${i+1} — ${s.exercise}  
+Set ${i+1} — ${s.exercise}<br>
 ${s.weight}kg x ${s.reps}
 </div>
 `
@@ -231,7 +285,6 @@ function saveSession(){
 if(currentSets.length===0)return
 
 let workout=document.getElementById("workoutSelect").value
-
 let date=new Date().toLocaleDateString()
 
 let session={
@@ -256,7 +309,7 @@ alert("Workout Saved")
 
 }
 
-function showLog(){
+function renderLog(){
 
 let log=document.getElementById("log")
 log.innerHTML=""
@@ -279,6 +332,55 @@ html+="</div>"
 log.innerHTML+=html
 
 })
+
+}
+
+function addExercise(){
+
+let ex=document.getElementById("newExercise").value
+
+if(!ex)return
+
+customExercises.push(ex)
+
+document.getElementById("newExercise").value=""
+
+renderCustomExercises()
+
+}
+
+function renderCustomExercises(){
+
+let box=document.getElementById("exerciseList")
+box.innerHTML=""
+
+customExercises.forEach(e=>{
+
+box.innerHTML+=`<div class="card">${e}</div>`
+
+})
+
+}
+
+function saveCustomWorkout(){
+
+let name=document.getElementById("newWorkoutName").value
+
+if(!name || customExercises.length===0)return
+
+workouts[name]=[...customExercises]
+
+customExercises=[]
+
+document.getElementById("exerciseList").innerHTML=""
+
+document.getElementById("newWorkoutName").value=""
+
+saveData()
+
+loadWorkouts()
+
+alert("Workout Saved")
 
 }
 
