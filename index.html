@@ -5,7 +5,7 @@
 <title>Training Log</title>
 
 <style>
-
+<button onclick="checkData()">Check Saved Data</button>
 body{
 background:#121212;
 color:white;
@@ -385,8 +385,13 @@ alert("Workout Saved")
 }
 
 loadWorkouts()
+  function checkData(){
+console.log(localStorage)
+alert(localStorage.getItem("sessions"))
+  }
 
 </script>
 
 </body>
 </html>
+
