@@ -155,7 +155,24 @@ Legs:[
 }
 
 let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS
-let sessions = JSON.parse(localStorage.getItem("sessions")) || []
+function loadSessions(){
+
+let keys=["sessions","trainingLog","workoutLog","log"]
+let all=[]
+
+keys.forEach(k=>{
+let data=localStorage.getItem(k)
+if(data){
+try{
+all=all.concat(JSON.parse(data))
+}catch{}
+}
+})
+
+return all
+}
+
+let sessions = loadSessions()
 let prs = JSON.parse(localStorage.getItem("prs")) || {}
 
 let currentSets=[]
@@ -432,3 +449,4 @@ loadWorkouts()
 
 </body>
 </html>
+
