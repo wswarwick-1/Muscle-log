@@ -1,23 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Training Log</title>
 
 <style>
-<button onclick="checkData()">Check Saved Data</button>
+
 body{
-background:#121212;
-color:white;
+background:#000;
+color:#fff;
 font-family:Arial;
-padding:15px;
+padding:20px;
 }
 
 h1{
-color:#f5c542;
+color:#d4af37;
+text-align:center;
 }
 
-select,input,button{
+button{
+width:100%;
+padding:12px;
+margin:6px 0;
+background:#d4af37;
+border:none;
+border-radius:8px;
+font-weight:bold;
+font-size:16px;
+}
+
+select,input{
 width:100%;
 padding:10px;
 margin:6px 0;
@@ -26,33 +40,30 @@ border:none;
 font-size:16px;
 }
 
-button{
-background:#f5c542;
-font-weight:bold;
-}
-
 .card{
-background:#1e1e1e;
+background:#111;
 padding:15px;
 margin:10px 0;
 border-radius:10px;
+border:1px solid #d4af37;
 }
 
 .pr{
-color:#00e676;
+color:#ffd700;
 font-weight:bold;
-}
-
-#previousBest{
-color:#f5c542;
-margin-bottom:10px;
 }
 
 .hidden{
 display:none;
 }
 
+#previousBest{
+color:#d4af37;
+margin-bottom:10px;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -78,9 +89,10 @@ display:none;
 <input id="reps" placeholder="Reps">
 
 <button onclick="addSet()">Add Set</button>
-<button onclick="saveSession()">Finish Workout</button>
 
 <div id="sets"></div>
+
+<button onclick="finishWorkout()">Finish Workout</button>
 
 </div>
 
@@ -88,7 +100,7 @@ display:none;
 
 <div id="logPage" class="hidden">
 
-<h2>Workout Log</h2>
+<h2 style="color:#d4af37;">Workout Log</h2>
 
 <div id="log"></div>
 
@@ -98,15 +110,15 @@ display:none;
 
 <div id="customPage" class="hidden">
 
-<h2>Create Workout</h2>
+<h2 style="color:#d4af37;">Custom Workout</h2>
 
-<input id="newWorkoutName" placeholder="Workout Name">
+<input id="newWorkoutName" placeholder="Workout name">
 
-<input id="newExercise" placeholder="Exercise Name">
+<input id="newExercise" placeholder="Exercise">
 
-<button onclick="addExercise()">Add Exercise</button>
+<button onclick="addCustomExercise()">Add Exercise</button>
 
-<div id="exerciseList"></div>
+<div id="customExerciseList"></div>
 
 <button onclick="saveCustomWorkout()">Save Workout</button>
 
@@ -146,13 +158,15 @@ let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS
 let sessions = JSON.parse(localStorage.getItem("sessions")) || []
 let prs = JSON.parse(localStorage.getItem("prs")) || {}
 
-let currentSets = []
-let customExercises = []
+let currentSets=[]
+let customExercises=[]
 
 function saveData(){
+
 localStorage.setItem("workouts",JSON.stringify(workouts))
 localStorage.setItem("sessions",JSON.stringify(sessions))
 localStorage.setItem("prs",JSON.stringify(prs))
+
 }
 
 function showPage(page){
@@ -170,6 +184,7 @@ if(page==="logPage") renderLog()
 function loadWorkouts(){
 
 let select=document.getElementById("workoutSelect")
+
 select.innerHTML=""
 
 Object.keys(workouts).forEach(w=>{
@@ -189,6 +204,7 @@ loadExercises()
 function loadExercises(){
 
 let workout=document.getElementById("workoutSelect").value
+
 let exSelect=document.getElementById("exerciseSelect")
 
 exSelect.innerHTML=""
@@ -233,12 +249,14 @@ let ex=document.getElementById("exerciseSelect").value
 let weight=document.getElementById("weight").value
 let reps=document.getElementById("reps").value
 
-if(!weight||!reps)return
+if(!weight || !reps) return
 
 currentSets.push({
+
 exercise:ex,
 weight:Number(weight),
 reps:Number(reps)
+
 })
 
 document.getElementById("weight").value=""
@@ -251,15 +269,21 @@ renderSets()
 function renderSets(){
 
 let box=document.getElementById("sets")
+
 box.innerHTML=""
 
 currentSets.forEach((s,i)=>{
 
 box.innerHTML+=`
+
 <div class="card">
-Set ${i+1} — ${s.exercise}<br>
+
+Set ${i+1}<br>
+${s.exercise}<br>
 ${s.weight}kg x ${s.reps}
+
 </div>
+
 `
 
 })
@@ -280,17 +304,18 @@ return false
 
 }
 
-function saveSession(){
+function finishWorkout(){
 
-if(currentSets.length===0)return
+if(currentSets.length===0) return
 
 let workout=document.getElementById("workoutSelect").value
-let date=new Date().toLocaleDateString()
 
 let session={
-date,
-workout,
+
+date:new Date().toLocaleDateString(),
+workout:workout,
 sets:[...currentSets]
+
 }
 
 sessions.unshift(session)
@@ -305,25 +330,38 @@ saveData()
 
 renderSets()
 
-alert("Workout Saved")
+alert("Workout saved")
 
 }
 
 function renderLog(){
 
 let log=document.getElementById("log")
+
 log.innerHTML=""
 
 sessions.forEach(s=>{
 
-let html=`<div class="card"><b>${s.workout}</b><br>${s.date}<br><br>`
+let html=`
+
+<div class="card">
+
+<b>${s.workout}</b><br>
+${s.date}<br><br>
+
+`
 
 s.sets.forEach(set=>{
 
-let pr=prs[set.exercise] &&
-prs[set.exercise].weight===set.weight
+let isPR=prs[set.exercise] && prs[set.exercise].weight===set.weight
 
-html+=`${set.exercise} — ${set.weight}kg x ${set.reps} ${pr?"<span class='pr'>PR</span>":""}<br>`
+html+=`
+
+${set.exercise} — ${set.weight}kg x ${set.reps}
+${isPR ? "<span class='pr'>PR</span>" : ""}
+<br>
+
+`
 
 })
 
@@ -335,11 +373,11 @@ log.innerHTML+=html
 
 }
 
-function addExercise(){
+function addCustomExercise(){
 
 let ex=document.getElementById("newExercise").value
 
-if(!ex)return
+if(!ex) return
 
 customExercises.push(ex)
 
@@ -351,12 +389,17 @@ renderCustomExercises()
 
 function renderCustomExercises(){
 
-let box=document.getElementById("exerciseList")
+let box=document.getElementById("customExerciseList")
+
 box.innerHTML=""
 
 customExercises.forEach(e=>{
 
-box.innerHTML+=`<div class="card">${e}</div>`
+box.innerHTML+=`
+
+<div class="card">${e}</div>
+
+`
 
 })
 
@@ -366,14 +409,13 @@ function saveCustomWorkout(){
 
 let name=document.getElementById("newWorkoutName").value
 
-if(!name || customExercises.length===0)return
+if(!name || customExercises.length===0) return
 
 workouts[name]=[...customExercises]
 
 customExercises=[]
 
-document.getElementById("exerciseList").innerHTML=""
-
+document.getElementById("customExerciseList").innerHTML=""
 document.getElementById("newWorkoutName").value=""
 
 saveData()
@@ -385,13 +427,8 @@ alert("Workout Saved")
 }
 
 loadWorkouts()
-  function checkData(){
-console.log(localStorage)
-alert(localStorage.getItem("sessions"))
-  }
 
 </script>
 
 </body>
 </html>
-
