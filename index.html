@@ -10,21 +10,21 @@
 
 body{
 background:#000;
-color:#fff;
+color:white;
 font-family:Arial;
 padding:20px;
 }
 
 h1{
-color:#d4af37;
 text-align:center;
+color:#D4AF37;
 }
 
 button{
 width:100%;
-padding:12px;
+padding:14px;
 margin:6px 0;
-background:#d4af37;
+background:#D4AF37;
 border:none;
 border-radius:8px;
 font-weight:bold;
@@ -33,7 +33,7 @@ font-size:16px;
 
 select,input{
 width:100%;
-padding:10px;
+padding:12px;
 margin:6px 0;
 border-radius:6px;
 border:none;
@@ -42,24 +42,30 @@ font-size:16px;
 
 .card{
 background:#111;
-padding:15px;
-margin:10px 0;
+padding:14px;
+margin:12px 0;
 border-radius:10px;
-border:1px solid #d4af37;
+border:1px solid #D4AF37;
+}
+
+.exerciseTitle{
+font-weight:bold;
+font-size:18px;
+color:#FFD700;
 }
 
 .pr{
-color:#ffd700;
+color:#FFD700;
 font-weight:bold;
+}
+
+.small{
+font-size:13px;
+color:#D4AF37;
 }
 
 .hidden{
 display:none;
-}
-
-#previousBest{
-color:#d4af37;
-margin-bottom:10px;
 }
 
 </style>
@@ -82,15 +88,14 @@ margin-bottom:10px;
 
 <select id="exerciseSelect"></select>
 
-<div id="previousBest"></div>
+<div id="previousBest" class="small"></div>
 
-<input id="weight" placeholder="Weight">
-
+<input id="weight" placeholder="Weight (kg)">
 <input id="reps" placeholder="Reps">
 
 <button onclick="addSet()">Add Set</button>
 
-<div id="sets"></div>
+<div id="setList"></div>
 
 <button onclick="finishWorkout()">Finish Workout</button>
 
@@ -100,25 +105,25 @@ margin-bottom:10px;
 
 <div id="logPage" class="hidden">
 
-<h2 style="color:#d4af37;">Workout Log</h2>
+<h2 style="color:#D4AF37;">Workout Log</h2>
 
 <div id="log"></div>
 
 </div>
 
-<!-- CUSTOM WORKOUT PAGE -->
+<!-- CUSTOM WORKOUT -->
 
 <div id="customPage" class="hidden">
 
-<h2 style="color:#d4af37;">Custom Workout</h2>
+<h2 style="color:#D4AF37;">Create Workout</h2>
 
 <input id="newWorkoutName" placeholder="Workout name">
 
-<input id="newExercise" placeholder="Exercise">
+<input id="newExercise" placeholder="Exercise name">
 
 <button onclick="addCustomExercise()">Add Exercise</button>
 
-<div id="customExerciseList"></div>
+<div id="customList"></div>
 
 <button onclick="saveCustomWorkout()">Save Workout</button>
 
@@ -126,65 +131,59 @@ margin-bottom:10px;
 
 <script>
 
-const DEFAULT_WORKOUTS = {
+/* ---------- LOAD OLD DATA SAFELY ---------- */
 
-Push:[
-"Bench Press",
-"Overhead Press",
-"Incline DB Press",
-"Lateral Raise",
-"Tricep Pushdown"
-],
-
-Pull:[
-"Deadlift",
-"Pull Up",
-"Barbell Row",
-"Face Pull",
-"Bicep Curl"
-],
-
-Legs:[
-"Squat",
-"Leg Press",
-"Romanian Deadlift",
-"Leg Curl",
-"Calf Raise"
-]
-
-}
-
-let workouts = JSON.parse(localStorage.getItem("workouts")) || DEFAULT_WORKOUTS
 function loadSessions(){
 
 let keys=["sessions","trainingLog","workoutLog","log"]
-let all=[]
+let merged=[]
 
 keys.forEach(k=>{
+
 let data=localStorage.getItem(k)
+
 if(data){
+
 try{
-all=all.concat(JSON.parse(data))
+merged=merged.concat(JSON.parse(data))
 }catch{}
+
 }
+
 })
 
-return all
+return merged
+
 }
 
 let sessions = loadSessions()
+
 let prs = JSON.parse(localStorage.getItem("prs")) || {}
+
+let workouts = JSON.parse(localStorage.getItem("workouts")) || {
+
+Push:["Bench Press","Incline DB Press","Overhead Press","Lateral Raise","Tricep Pushdown"],
+
+Pull:["Deadlift","Pull Up","Barbell Row","Face Pull","Bicep Curl"],
+
+Legs:["Squat","Leg Press","Romanian Deadlift","Leg Curl","Calf Raise"]
+
+}
 
 let currentSets=[]
 let customExercises=[]
 
+/* ---------- SAVE ---------- */
+
 function saveData(){
 
-localStorage.setItem("workouts",JSON.stringify(workouts))
 localStorage.setItem("sessions",JSON.stringify(sessions))
 localStorage.setItem("prs",JSON.stringify(prs))
+localStorage.setItem("workouts",JSON.stringify(workouts))
 
 }
+
+/* ---------- NAV ---------- */
 
 function showPage(page){
 
@@ -197,6 +196,8 @@ document.getElementById(page).classList.remove("hidden")
 if(page==="logPage") renderLog()
 
 }
+
+/* ---------- LOAD WORKOUTS ---------- */
 
 function loadWorkouts(){
 
@@ -226,11 +227,11 @@ let exSelect=document.getElementById("exerciseSelect")
 
 exSelect.innerHTML=""
 
-workouts[workout].forEach(e=>{
+workouts[workout].forEach(ex=>{
 
 let o=document.createElement("option")
-o.value=e
-o.textContent=e
+o.value=ex
+o.textContent=ex
 
 exSelect.appendChild(o)
 
@@ -242,6 +243,8 @@ showPreviousBest()
 
 document.getElementById("workoutSelect").onchange=loadExercises
 document.getElementById("exerciseSelect").onchange=showPreviousBest
+
+/* ---------- PREVIOUS BEST ---------- */
 
 function showPreviousBest(){
 
@@ -259,6 +262,8 @@ box.innerHTML="Previous Best: none"
 }
 
 }
+
+/* ---------- ADD SET ---------- */
 
 function addSet(){
 
@@ -283,9 +288,11 @@ renderSets()
 
 }
 
+/* ---------- RENDER SETS ---------- */
+
 function renderSets(){
 
-let box=document.getElementById("sets")
+let box=document.getElementById("setList")
 
 box.innerHTML=""
 
@@ -307,12 +314,13 @@ ${s.weight}kg x ${s.reps}
 
 }
 
-function updatePR(ex,weight,reps){
+/* ---------- PR SYSTEM ---------- */
 
-if(!prs[ex] || weight>prs[ex].weight){
+function updatePR(ex,w,r){
 
-prs[ex]={weight,reps}
+if(!prs[ex] || w>prs[ex].weight){
 
+prs[ex]={weight:w,reps:r}
 return true
 
 }
@@ -320,6 +328,8 @@ return true
 return false
 
 }
+
+/* ---------- FINISH WORKOUT ---------- */
 
 function finishWorkout(){
 
@@ -351,6 +361,8 @@ alert("Workout saved")
 
 }
 
+/* ---------- RENDER LOG ---------- */
+
 function renderLog(){
 
 let log=document.getElementById("log")
@@ -359,28 +371,50 @@ log.innerHTML=""
 
 sessions.forEach(s=>{
 
+let volume=0
+
 let html=`
 
 <div class="card">
 
 <b>${s.workout}</b><br>
-${s.date}<br><br>
+<span class="small">${s.date}</span><br><br>
 
 `
+
+let grouped={}
 
 s.sets.forEach(set=>{
 
-let isPR=prs[set.exercise] && prs[set.exercise].weight===set.weight
+if(!grouped[set.exercise]) grouped[set.exercise]=[]
+
+grouped[set.exercise].push(set)
+
+})
+
+Object.keys(grouped).forEach(ex=>{
+
+html+=`<div class="exerciseTitle">${ex}</div>`
+
+grouped[ex].forEach(set=>{
+
+volume+=set.weight*set.reps
+
+let isPR=prs[ex] && prs[ex].weight===set.weight
 
 html+=`
-
-${set.exercise} — ${set.weight}kg x ${set.reps}
-${isPR ? "<span class='pr'>PR</span>" : ""}
+${set.weight}kg x ${set.reps}
+${isPR ? "<span class='pr'> PR</span>" : ""}
 <br>
-
 `
 
 })
+
+html+="<br>"
+
+})
+
+html+=`<div class="small">Volume: ${volume} kg</div>`
 
 html+="</div>"
 
@@ -389,6 +423,8 @@ log.innerHTML+=html
 })
 
 }
+
+/* ---------- CUSTOM WORKOUT ---------- */
 
 function addCustomExercise(){
 
@@ -406,17 +442,13 @@ renderCustomExercises()
 
 function renderCustomExercises(){
 
-let box=document.getElementById("customExerciseList")
+let box=document.getElementById("customList")
 
 box.innerHTML=""
 
 customExercises.forEach(e=>{
 
-box.innerHTML+=`
-
-<div class="card">${e}</div>
-
-`
+box.innerHTML+=`<div class="card">${e}</div>`
 
 })
 
@@ -432,7 +464,7 @@ workouts[name]=[...customExercises]
 
 customExercises=[]
 
-document.getElementById("customExerciseList").innerHTML=""
+document.getElementById("customList").innerHTML=""
 document.getElementById("newWorkoutName").value=""
 
 saveData()
@@ -443,10 +475,11 @@ alert("Workout Saved")
 
 }
 
+/* ---------- START ---------- */
+
 loadWorkouts()
 
 </script>
 
 </body>
 </html>
-
