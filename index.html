@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html>
-<button onclick="alert(JSON.stringify(localStorage))">Check Storage</button>
 <head>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Training Log</title>
@@ -10,10 +8,10 @@
 <style>
 
 body{
-background:#000;
+background:black;
 color:white;
 font-family:Arial;
-padding:20px;
+padding:18px;
 }
 
 h1{
@@ -27,32 +25,30 @@ padding:14px;
 margin:6px 0;
 background:#D4AF37;
 border:none;
-border-radius:8px;
+border-radius:10px;
 font-weight:bold;
-font-size:16px;
 }
 
-select,input{
+input,select{
 width:100%;
 padding:12px;
 margin:6px 0;
-border-radius:6px;
+border-radius:8px;
 border:none;
-font-size:16px;
 }
 
 .card{
 background:#111;
 padding:14px;
-margin:12px 0;
-border-radius:10px;
+margin:10px 0;
+border-radius:12px;
 border:1px solid #D4AF37;
 }
 
-.exerciseTitle{
+.exercise{
 font-weight:bold;
-font-size:18px;
 color:#FFD700;
+margin-top:8px;
 }
 
 .pr{
@@ -70,7 +66,6 @@ display:none;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -79,7 +74,7 @@ display:none;
 
 <button onclick="showPage('workoutPage')">Workout</button>
 <button onclick="showPage('logPage')">Log</button>
-<button onclick="showPage('customPage')">Custom Workouts</button>
+<button onclick="showPage('customPage')">Custom</button>
 
 <div id="workoutPage">
 
@@ -89,7 +84,7 @@ display:none;
 
 <div id="previousBest" class="small"></div>
 
-<input id="weight" placeholder="Weight (kg)">
+<input id="weight" placeholder="Weight">
 <input id="reps" placeholder="Reps">
 
 <button onclick="addSet()">Add Set</button>
@@ -102,7 +97,7 @@ display:none;
 
 <div id="logPage" class="hidden">
 
-<h2 style="color:#D4AF37;">Workout Log</h2>
+<h2 style="color:#D4AF37">Workout Log</h2>
 
 <div id="log"></div>
 
@@ -110,15 +105,15 @@ display:none;
 
 <div id="customPage" class="hidden">
 
-<h2 style="color:#D4AF37;">Create Workout</h2>
+<h2 style="color:#D4AF37">Custom Workout</h2>
 
-<input id="newWorkoutName" placeholder="Workout name">
+<input id="customWorkoutName" placeholder="Workout name">
 
-<input id="newExercise" placeholder="Exercise name">
+<input id="customExercise" placeholder="Exercise">
 
 <button onclick="addCustomExercise()">Add Exercise</button>
 
-<div id="customList"></div>
+<div id="customExercises"></div>
 
 <button onclick="saveCustomWorkout()">Save Workout</button>
 
@@ -126,55 +121,41 @@ display:none;
 
 <script>
 
-/* ----------- RECOVER ALL OLD LOGS ----------- */
+/* -------- RECOVER LOG -------- */
 
-function recoverLogs(){
+function loadRecoveredSessions(){
 
-let keys=[
-"sessions",
-"workoutSessions",
-"trainingSessions",
-"logSessions",
-"trainingLog"
-]
+let keys=["sessions","workoutSessions","trainingSessions","logSessions"]
 
 let recovered=[]
 
-keys.forEach(key=>{
+keys.forEach(k=>{
 
-let data=localStorage.getItem(key)
+let data=localStorage.getItem(k)
 
 if(data){
-
 try{
-
 let parsed=JSON.parse(data)
-
-if(Array.isArray(parsed)){
-recovered=recovered.concat(parsed)
-}
-
+if(Array.isArray(parsed)) recovered=recovered.concat(parsed)
 }catch{}
-
 }
 
 })
 
 return recovered
-
 }
 
-let sessions=recoverLogs()
+let sessions=loadRecoveredSessions()
 
 let prs=JSON.parse(localStorage.getItem("prs"))||{}
 
 let workouts=JSON.parse(localStorage.getItem("workouts"))||{
 
-Push:["Bench Press","Incline DB Press","Overhead Press","Lateral Raise","Tricep Pushdown"],
+Push:["Bench Press","Overhead Press","Incline DB Press","Lateral Raise"],
 
-Pull:["Deadlift","Pull Up","Barbell Row","Face Pull","Bicep Curl"],
+Pull:["Deadlift","Pull Up","Barbell Row","Face Pull"],
 
-Legs:["Squat","Leg Press","Romanian Deadlift","Leg Curl","Calf Raise"]
+Legs:["Squat","Leg Press","Romanian Deadlift","Leg Curl"]
 
 }
 
@@ -182,9 +163,9 @@ let currentSets=[]
 
 let customExercises=[]
 
-/* -------- SAVE -------- */
+/* SAVE */
 
-function saveData(){
+function save(){
 
 localStorage.setItem("sessions",JSON.stringify(sessions))
 localStorage.setItem("prs",JSON.stringify(prs))
@@ -192,7 +173,7 @@ localStorage.setItem("workouts",JSON.stringify(workouts))
 
 }
 
-/* -------- NAV -------- */
+/* NAV */
 
 function showPage(page){
 
@@ -206,21 +187,20 @@ if(page==="logPage") renderLog()
 
 }
 
-/* -------- WORKOUT LOAD -------- */
+/* WORKOUT LOAD */
 
 function loadWorkouts(){
 
-let select=document.getElementById("workoutSelect")
+let w=document.getElementById("workoutSelect")
 
-select.innerHTML=""
+w.innerHTML=""
 
-Object.keys(workouts).forEach(w=>{
+Object.keys(workouts).forEach(name=>{
 
 let o=document.createElement("option")
-o.value=w
-o.textContent=w
-
-select.appendChild(o)
+o.value=name
+o.textContent=name
+w.appendChild(o)
 
 })
 
@@ -232,17 +212,16 @@ function loadExercises(){
 
 let workout=document.getElementById("workoutSelect").value
 
-let exSelect=document.getElementById("exerciseSelect")
+let ex=document.getElementById("exerciseSelect")
 
-exSelect.innerHTML=""
+ex.innerHTML=""
 
-workouts[workout].forEach(ex=>{
+workouts[workout].forEach(e=>{
 
 let o=document.createElement("option")
-o.value=ex
-o.textContent=ex
-
-exSelect.appendChild(o)
+o.value=e
+o.textContent=e
+ex.appendChild(o)
 
 })
 
@@ -253,7 +232,7 @@ showPreviousBest()
 document.getElementById("workoutSelect").onchange=loadExercises
 document.getElementById("exerciseSelect").onchange=showPreviousBest
 
-/* -------- PREVIOUS BEST -------- */
+/* PREVIOUS BEST */
 
 function showPreviousBest(){
 
@@ -262,34 +241,24 @@ let ex=document.getElementById("exerciseSelect").value
 let box=document.getElementById("previousBest")
 
 if(prs[ex]){
-
 box.innerHTML="Previous Best: "+prs[ex].weight+"kg x "+prs[ex].reps
-
 }else{
-
 box.innerHTML="Previous Best: none"
-
 }
 
 }
 
-/* -------- ADD SET -------- */
+/* ADD SET */
 
 function addSet(){
 
 let ex=document.getElementById("exerciseSelect").value
-let weight=document.getElementById("weight").value
-let reps=document.getElementById("reps").value
+let w=Number(document.getElementById("weight").value)
+let r=Number(document.getElementById("reps").value)
 
-if(!weight||!reps) return
+if(!w||!r) return
 
-currentSets.push({
-
-exercise:ex,
-weight:Number(weight),
-reps:Number(reps)
-
-})
+currentSets.push({exercise:ex,weight:w,reps:r})
 
 document.getElementById("weight").value=""
 document.getElementById("reps").value=""
@@ -298,7 +267,7 @@ renderSets()
 
 }
 
-/* -------- RENDER SETS -------- */
+/* SHOW SETS */
 
 function renderSets(){
 
@@ -324,9 +293,9 @@ ${s.weight}kg x ${s.reps}
 
 }
 
-/* -------- PR SYSTEM -------- */
+/* PR */
 
-function updatePR(ex,w,r){
+function checkPR(ex,w,r){
 
 if(!prs[ex]||w>prs[ex].weight){
 
@@ -339,7 +308,7 @@ return false
 
 }
 
-/* -------- FINISH WORKOUT -------- */
+/* FINISH */
 
 function finishWorkout(){
 
@@ -358,12 +327,12 @@ sets:[...currentSets]
 sessions.unshift(session)
 
 currentSets.forEach(s=>{
-updatePR(s.exercise,s.weight,s.reps)
+checkPR(s.exercise,s.weight,s.reps)
 })
 
 currentSets=[]
 
-saveData()
+save()
 
 renderSets()
 
@@ -371,7 +340,7 @@ alert("Workout saved")
 
 }
 
-/* -------- LOG -------- */
+/* LOG */
 
 function renderLog(){
 
@@ -381,7 +350,17 @@ log.innerHTML=""
 
 sessions.forEach(s=>{
 
+let grouped={}
+
 let volume=0
+
+s.sets.forEach(set=>{
+
+if(!grouped[set.exercise]) grouped[set.exercise]=[]
+
+grouped[set.exercise].push(set)
+
+})
 
 let html=`
 
@@ -392,29 +371,19 @@ let html=`
 
 `
 
-let grouped={}
-
-s.sets.forEach(set=>{
-
-if(!grouped[set.exercise]) grouped[set.exercise]=[]
-
-grouped[set.exercise].push(set)
-
-})
-
 Object.keys(grouped).forEach(ex=>{
 
-html+=`<div class="exerciseTitle">${ex}</div>`
+html+=`<div class="exercise">${ex}</div>`
 
 grouped[ex].forEach(set=>{
 
 volume+=set.weight*set.reps
 
-let isPR=prs[ex] && prs[ex].weight===set.weight
+let pr=prs[ex] && prs[ex].weight===set.weight
 
 html+=`
 ${set.weight}kg x ${set.reps}
-${isPR ? "<span class='pr'> PR</span>" : ""}
+${pr?"<span class='pr'> PR</span>":""}
 <br>
 `
 
@@ -424,7 +393,7 @@ html+="<br>"
 
 })
 
-html+=`<div class="small">Volume: ${volume} kg</div>`
+html+=`<div class="small">Volume: ${volume}kg</div>`
 
 html+="</div>"
 
@@ -434,17 +403,17 @@ log.innerHTML+=html
 
 }
 
-/* -------- CUSTOM WORKOUT -------- */
+/* CUSTOM WORKOUT */
 
 function addCustomExercise(){
 
-let ex=document.getElementById("newExercise").value
+let ex=document.getElementById("customExercise").value
 
 if(!ex) return
 
 customExercises.push(ex)
 
-document.getElementById("newExercise").value=""
+document.getElementById("customExercise").value=""
 
 renderCustomExercises()
 
@@ -452,7 +421,7 @@ renderCustomExercises()
 
 function renderCustomExercises(){
 
-let box=document.getElementById("customList")
+let box=document.getElementById("customExercises")
 
 box.innerHTML=""
 
@@ -466,7 +435,7 @@ box.innerHTML+=`<div class="card">${e}</div>`
 
 function saveCustomWorkout(){
 
-let name=document.getElementById("newWorkoutName").value
+let name=document.getElementById("customWorkoutName").value
 
 if(!name||customExercises.length===0) return
 
@@ -474,18 +443,17 @@ workouts[name]=[...customExercises]
 
 customExercises=[]
 
-document.getElementById("customList").innerHTML=""
-document.getElementById("newWorkoutName").value=""
+document.getElementById("customExercises").innerHTML=""
 
-saveData()
+save()
 
 loadWorkouts()
 
-alert("Workout Saved")
+alert("Workout saved")
 
 }
 
-/* -------- START -------- */
+/* START */
 
 loadWorkouts()
 
@@ -493,4 +461,3 @@ loadWorkouts()
 
 </body>
 </html>
-
