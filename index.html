@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -80,8 +81,6 @@ display:none;
 <button onclick="showPage('logPage')">Log</button>
 <button onclick="showPage('customPage')">Custom Workouts</button>
 
-<!-- WORKOUT PAGE -->
-
 <div id="workoutPage">
 
 <select id="workoutSelect"></select>
@@ -101,8 +100,6 @@ display:none;
 
 </div>
 
-<!-- LOG PAGE -->
-
 <div id="logPage" class="hidden">
 
 <h2 style="color:#D4AF37;">Workout Log</h2>
@@ -110,8 +107,6 @@ display:none;
 <div id="log"></div>
 
 </div>
-
-<!-- CUSTOM WORKOUT -->
 
 <div id="customPage" class="hidden">
 
@@ -131,36 +126,49 @@ display:none;
 
 <script>
 
-/* ---------- LOAD OLD DATA SAFELY ---------- */
+/* ----------- RECOVER ALL OLD LOGS ----------- */
 
-function loadSessions(){
+function recoverLogs(){
 
-let keys=["sessions","trainingLog","workoutLog","log"]
-let merged=[]
+let keys=[
+"sessions",
+"workoutSessions",
+"trainingSessions",
+"logSessions",
+"trainingLog"
+]
 
-keys.forEach(k=>{
+let recovered=[]
 
-let data=localStorage.getItem(k)
+keys.forEach(key=>{
+
+let data=localStorage.getItem(key)
 
 if(data){
 
 try{
-merged=merged.concat(JSON.parse(data))
+
+let parsed=JSON.parse(data)
+
+if(Array.isArray(parsed)){
+recovered=recovered.concat(parsed)
+}
+
 }catch{}
 
 }
 
 })
 
-return merged
+return recovered
 
 }
 
-let sessions = loadSessions()
+let sessions=recoverLogs()
 
-let prs = JSON.parse(localStorage.getItem("prs")) || {}
+let prs=JSON.parse(localStorage.getItem("prs"))||{}
 
-let workouts = JSON.parse(localStorage.getItem("workouts")) || {
+let workouts=JSON.parse(localStorage.getItem("workouts"))||{
 
 Push:["Bench Press","Incline DB Press","Overhead Press","Lateral Raise","Tricep Pushdown"],
 
@@ -171,9 +179,10 @@ Legs:["Squat","Leg Press","Romanian Deadlift","Leg Curl","Calf Raise"]
 }
 
 let currentSets=[]
+
 let customExercises=[]
 
-/* ---------- SAVE ---------- */
+/* -------- SAVE -------- */
 
 function saveData(){
 
@@ -183,7 +192,7 @@ localStorage.setItem("workouts",JSON.stringify(workouts))
 
 }
 
-/* ---------- NAV ---------- */
+/* -------- NAV -------- */
 
 function showPage(page){
 
@@ -197,7 +206,7 @@ if(page==="logPage") renderLog()
 
 }
 
-/* ---------- LOAD WORKOUTS ---------- */
+/* -------- WORKOUT LOAD -------- */
 
 function loadWorkouts(){
 
@@ -244,11 +253,12 @@ showPreviousBest()
 document.getElementById("workoutSelect").onchange=loadExercises
 document.getElementById("exerciseSelect").onchange=showPreviousBest
 
-/* ---------- PREVIOUS BEST ---------- */
+/* -------- PREVIOUS BEST -------- */
 
 function showPreviousBest(){
 
 let ex=document.getElementById("exerciseSelect").value
+
 let box=document.getElementById("previousBest")
 
 if(prs[ex]){
@@ -263,7 +273,7 @@ box.innerHTML="Previous Best: none"
 
 }
 
-/* ---------- ADD SET ---------- */
+/* -------- ADD SET -------- */
 
 function addSet(){
 
@@ -271,7 +281,7 @@ let ex=document.getElementById("exerciseSelect").value
 let weight=document.getElementById("weight").value
 let reps=document.getElementById("reps").value
 
-if(!weight || !reps) return
+if(!weight||!reps) return
 
 currentSets.push({
 
@@ -288,7 +298,7 @@ renderSets()
 
 }
 
-/* ---------- RENDER SETS ---------- */
+/* -------- RENDER SETS -------- */
 
 function renderSets(){
 
@@ -314,11 +324,11 @@ ${s.weight}kg x ${s.reps}
 
 }
 
-/* ---------- PR SYSTEM ---------- */
+/* -------- PR SYSTEM -------- */
 
 function updatePR(ex,w,r){
 
-if(!prs[ex] || w>prs[ex].weight){
+if(!prs[ex]||w>prs[ex].weight){
 
 prs[ex]={weight:w,reps:r}
 return true
@@ -329,7 +339,7 @@ return false
 
 }
 
-/* ---------- FINISH WORKOUT ---------- */
+/* -------- FINISH WORKOUT -------- */
 
 function finishWorkout(){
 
@@ -361,7 +371,7 @@ alert("Workout saved")
 
 }
 
-/* ---------- RENDER LOG ---------- */
+/* -------- LOG -------- */
 
 function renderLog(){
 
@@ -424,7 +434,7 @@ log.innerHTML+=html
 
 }
 
-/* ---------- CUSTOM WORKOUT ---------- */
+/* -------- CUSTOM WORKOUT -------- */
 
 function addCustomExercise(){
 
@@ -458,7 +468,7 @@ function saveCustomWorkout(){
 
 let name=document.getElementById("newWorkoutName").value
 
-if(!name || customExercises.length===0) return
+if(!name||customExercises.length===0) return
 
 workouts[name]=[...customExercises]
 
@@ -475,7 +485,7 @@ alert("Workout Saved")
 
 }
 
-/* ---------- START ---------- */
+/* -------- START -------- */
 
 loadWorkouts()
 
