@@ -3,7 +3,6 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>Training Log</title>
 
 <style>
@@ -11,21 +10,21 @@
 body{
 margin:0;
 font-family:Roboto,Arial;
-background:#0D0D0F;
-color:#F1F1F1;
+background:#121212;
+color:#F5F5F5;
 }
 
 header{
 padding:18px;
 font-size:22px;
-text-align:center;
 font-weight:bold;
+text-align:center;
 border-bottom:1px solid #222;
 }
 
 .container{
 padding:16px;
-padding-bottom:90px;
+padding-bottom:100px;
 }
 
 select,input{
@@ -34,7 +33,7 @@ padding:14px;
 margin-top:10px;
 border:none;
 border-radius:10px;
-background:#1A1A1F;
+background:#1E1E1E;
 color:white;
 font-size:16px;
 }
@@ -45,37 +44,39 @@ padding:14px;
 margin-top:10px;
 border:none;
 border-radius:10px;
-background:#C1121F;
-color:white;
+background:#FFD54A;
+color:black;
 font-weight:bold;
 font-size:16px;
 }
 
 .card{
-background:#1A1A1F;
+background:#1E1E1E;
 padding:16px;
 border-radius:14px;
 margin-bottom:16px;
+box-shadow:0 2px 6px rgba(0,0,0,.4);
 }
 
 .exerciseTitle{
 font-size:18px;
 font-weight:bold;
+margin-bottom:4px;
 }
 
 .previous{
 font-size:13px;
-color:#aaa;
+color:#9E9E9E;
 margin-bottom:10px;
 }
 
-.setList{
-margin-top:10px;
+.set{
+padding:6px 0;
 font-size:14px;
 }
 
 .pr{
-color:#FCA311;
+color:#FFD54A;
 font-weight:bold;
 margin-left:6px;
 }
@@ -83,15 +84,18 @@ margin-left:6px;
 .fab{
 position:fixed;
 right:20px;
-bottom:90px;
+bottom:95px;
 width:60px;
 height:60px;
 border-radius:50%;
-background:#C1121F;
+background:#FFD54A;
+color:black;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:30px;
+font-size:32px;
+font-weight:bold;
+box-shadow:0 4px 10px rgba(0,0,0,.5);
 }
 
 .bottomNav{
@@ -99,7 +103,7 @@ position:fixed;
 bottom:0;
 left:0;
 right:0;
-background:#111;
+background:#1A1A1A;
 display:flex;
 border-top:1px solid #222;
 }
@@ -107,11 +111,20 @@ border-top:1px solid #222;
 .bottomNav button{
 flex:1;
 background:none;
+color:white;
 padding:16px;
+font-size:14px;
 }
 
 .hidden{
 display:none;
+}
+
+.dateHeader{
+font-size:16px;
+font-weight:bold;
+margin:20px 0 10px 0;
+color:#FFD54A;
 }
 
 </style>
@@ -124,6 +137,8 @@ display:none;
 
 <div class="container">
 
+<!-- WORKOUT PAGE -->
+
 <div id="workoutPage">
 
 <select id="workoutSelect" onchange="loadWorkout()"></select>
@@ -132,15 +147,21 @@ display:none;
 
 </div>
 
+
+<!-- LOG PAGE -->
+
 <div id="logPage" class="hidden">
 
 <div id="logContainer"></div>
 
 </div>
 
+
+<!-- CUSTOM PAGE -->
+
 <div id="customPage" class="hidden">
 
-<input id="customWorkoutName" placeholder="Workout name">
+<input id="customWorkoutName" placeholder="Workout Name">
 
 <div id="customExercises"></div>
 
@@ -151,6 +172,7 @@ display:none;
 </div>
 
 </div>
+
 
 <div class="fab" onclick="addExercise()">+</div>
 
@@ -163,16 +185,16 @@ display:none;
 
 <script>
 
-let sessions = JSON.parse(localStorage.getItem("training_sessions")||"[]")
-let customWorkouts = JSON.parse(localStorage.getItem("custom_workouts")||"[]")
+let sessions=JSON.parse(localStorage.getItem("training_sessions")||"[]")
+let customWorkouts=JSON.parse(localStorage.getItem("custom_workouts")||"[]")
 
 let workouts={
 
-Push:["Bench Press","Incline Bench","Shoulder Press"],
+Push:["Bench Press","Incline Bench","Shoulder Press","Lateral Raise"],
 
-Pull:["Deadlift","Barbell Row","Lat Pulldown"],
+Pull:["Deadlift","Barbell Row","Lat Pulldown","Bicep Curl"],
 
-Legs:["Squat","Leg Press","Leg Curl"]
+Legs:["Squat","Leg Press","Leg Curl","Calf Raise"]
 
 }
 
@@ -281,21 +303,39 @@ let reps=parseInt(card.querySelector(".reps").value)
 
 if(!weight || !reps)return
 
+let pr=isPR(exercise,weight)
+
 let record={
 exercise,
 weight,
 reps,
-date:Date.now()
+date:Date.now(),
+pr
 }
 
 sessions.push(record)
 
 localStorage.setItem("training_sessions",JSON.stringify(sessions))
 
-card.querySelector(".setList").innerHTML+=`${weight}kg x ${reps}<br>`
+let badge=pr?'<span class="pr">🏆 PR</span>':""
+
+card.querySelector(".setList").innerHTML+=`<div class="set">${weight}kg x ${reps} ${badge}</div>`
 
 card.querySelector(".weight").value=""
 card.querySelector(".reps").value=""
+
+}
+
+
+function isPR(ex,w){
+
+let best=0
+
+sessions.forEach(s=>{
+if(s.exercise===ex && s.weight>best)best=s.weight
+})
+
+return w>best
 
 }
 
@@ -308,7 +348,21 @@ container.innerHTML=""
 
 let sorted=[...sessions].sort((a,b)=>b.date-a.date)
 
+let lastDate=""
+
 sorted.forEach(s=>{
+
+let date=new Date(s.date).toLocaleDateString()
+
+if(date!==lastDate){
+
+container.innerHTML+=`<div class="dateHeader">${date}</div>`
+
+lastDate=date
+
+}
+
+let badge=s.pr?'<span class="pr">🏆 PR</span>':""
 
 let div=document.createElement("div")
 
@@ -320,9 +374,7 @@ div.innerHTML=`
 
 ${s.weight}kg x ${s.reps}
 
-<br>
-
-${new Date(s.date).toLocaleDateString()}
+${badge}
 
 `
 
