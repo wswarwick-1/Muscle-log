@@ -1,78 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Training Log</title>
 
 <style>
 
 body{
-background:#0a0a0a;
-color:white;
-font-family:Arial;
 margin:0;
-padding:20px;
+font-family:-apple-system,BlinkMacSystemFont,Arial;
+background:#0f0f10;
+color:white;
 }
 
-h1{
-color:#ff2a2a;
+header{
 text-align:center;
+padding:18px;
+font-size:22px;
+font-weight:bold;
+border-bottom:1px solid #222;
 }
 
-select,input,button{
-width:100%;
-padding:12px;
-margin:8px 0;
-border:none;
-border-radius:6px;
-font-size:16px;
+.container{
+padding:16px;
+padding-bottom:90px;
 }
 
 select,input{
-background:#1a1a1a;
+width:100%;
+padding:14px;
+margin:8px 0;
+border-radius:10px;
+border:none;
+background:#1c1c1e;
 color:white;
+font-size:16px;
 }
 
 button{
-background:#ff2a2a;
+width:100%;
+padding:16px;
+margin:8px 0;
+border-radius:12px;
+border:none;
+background:#b11226;
 color:white;
+font-size:16px;
 font-weight:bold;
 }
 
-button:hover{
-background:#ff4444;
+button:active{
+transform:scale(.98);
 }
 
 .card{
-background:#141414;
-padding:15px;
-border-radius:10px;
-margin:10px 0;
-border-left:4px solid #ff2a2a;
+background:#1c1c1e;
+padding:16px;
+margin:14px 0;
+border-radius:14px;
 }
 
-.exerciseRow{
-display:flex;
-gap:8px;
+.exercise{
+font-size:18px;
+font-weight:bold;
+margin-bottom:8px;
 }
 
-.exerciseRow input{
-flex:1;
+.previous{
+font-size:13px;
+color:#9a9a9a;
+margin-bottom:10px;
 }
 
 .pr{
 color:#ffd700;
 font-weight:bold;
+margin-left:6px;
 }
 
-.tabs{
+.bottomNav{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#141414;
 display:flex;
-gap:10px;
-margin-bottom:20px;
+border-top:1px solid #222;
 }
 
-.tabs button{
+.bottomNav button{
 flex:1;
+background:none;
+font-size:15px;
+padding:16px;
 }
 
 .hidden{
@@ -80,98 +102,89 @@ display:none;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<h1>Training Log</h1>
+<header>Training Log</header>
 
-<div class="tabs">
-<button onclick="showPage('workoutPage')">Workout</button>
-<button onclick="showPage('logPage')">Log</button>
-<button onclick="showPage('customPage')">Custom</button>
-</div>
-
+<div class="container">
 
 <!-- WORKOUT PAGE -->
 
 <div id="workoutPage">
 
-<select id="workoutSelect" onchange="loadWorkout()">
-<option value="">Select Workout</option>
-</select>
+<select id="workoutSelect" onchange="loadWorkout()"></select>
 
-<div id="exerciseContainer"></div>
-
-<button onclick="addExercise()">Add Exercise</button>
+<div id="exerciseList"></div>
 
 </div>
-
 
 
 <!-- LOG PAGE -->
 
 <div id="logPage" class="hidden">
 
-<h2>Training History</h2>
-
-<div id="logContainer"></div>
+<div id="logList"></div>
 
 </div>
-
 
 
 <!-- CUSTOM PAGE -->
 
 <div id="customPage" class="hidden">
 
-<h2>Create Custom Workout</h2>
+<input id="customWorkoutName" placeholder="Workout Name">
 
-<input id="customName" placeholder="Workout name">
-
-<div id="customExercises"></div>
+<div id="customExerciseList"></div>
 
 <button onclick="addCustomExercise()">Add Exercise</button>
+
 <button onclick="saveCustomWorkout()">Save Workout</button>
 
 </div>
 
+</div>
+
+
+<div class="bottomNav">
+<button onclick="showPage('workoutPage')">Workout</button>
+<button onclick="showPage('logPage')">Log</button>
+<button onclick="showPage('customPage')">Custom</button>
+</div>
 
 
 <script>
 
-/* ---------- STORAGE ---------- */
+/* STORAGE */
 
-let sessions = JSON.parse(localStorage.getItem("training_sessions") || "[]")
-let customWorkouts = JSON.parse(localStorage.getItem("custom_workouts") || "[]")
+let sessions = JSON.parse(localStorage.getItem("training_sessions")||"[]")
+let customWorkouts = JSON.parse(localStorage.getItem("custom_workouts")||"[]")
 
 
+/* PRESETS */
 
-/* ---------- PRESET WORKOUTS ---------- */
+let workouts = {
 
-let presetWorkouts = {
+Push:["Bench Press","Incline Bench","Shoulder Press","Lateral Raise"],
 
-Push:["Bench Press","Incline Bench","Shoulder Press","Lateral Raise","Tricep Pushdown"],
+Pull:["Deadlift","Barbell Row","Lat Pulldown","Bicep Curl"],
 
-Pull:["Deadlift","Barbell Row","Lat Pulldown","Face Pull","Bicep Curl"],
-
-Legs:["Squat","Leg Press","Leg Curl","Calf Raise"],
-
-Powerlifting:["Squat","Bench Press","Deadlift"]
+Legs:["Squat","Leg Press","Leg Curl","Calf Raise"]
 
 }
 
 
-
-/* ---------- INIT ---------- */
+/* INIT */
 
 function init(){
 
 let select=document.getElementById("workoutSelect")
 
-select.innerHTML='<option value="">Select Workout</option>'
+select.innerHTML=""
 
-Object.keys(presetWorkouts).forEach(w=>{
+Object.keys(workouts).forEach(w=>{
 select.innerHTML+=`<option>${w}</option>`
 })
 
@@ -179,15 +192,12 @@ customWorkouts.forEach(w=>{
 select.innerHTML+=`<option>${w.name}</option>`
 })
 
-renderLog()
-
 }
 
 init()
 
 
-
-/* ---------- PAGE SWITCH ---------- */
+/* NAVIGATION */
 
 function showPage(page){
 
@@ -197,76 +207,88 @@ document.getElementById(p).classList.add("hidden")
 
 document.getElementById(page).classList.remove("hidden")
 
+if(page==="logPage") renderLog()
+
 }
 
 
-
-/* ---------- LOAD WORKOUT ---------- */
+/* LOAD WORKOUT */
 
 function loadWorkout(){
 
 let workout=document.getElementById("workoutSelect").value
 
-let exercises=presetWorkouts[workout]
+let exercises=workouts[workout]
 
 customWorkouts.forEach(w=>{
 if(w.name===workout)exercises=w.exercises
 })
 
-let container=document.getElementById("exerciseContainer")
+let container=document.getElementById("exerciseList")
 
 container.innerHTML=""
 
 if(!exercises)return
 
-exercises.forEach(e=>addExercise(e))
+exercises.forEach(e=>createExercise(e))
 
 }
 
 
+/* CREATE EXERCISE CARD */
 
-/* ---------- ADD EXERCISE ---------- */
-
-function addExercise(name=""){
-
-let container=document.getElementById("exerciseContainer")
+function createExercise(name){
 
 let div=document.createElement("div")
+
 div.className="card"
 
 div.innerHTML=`
 
-<input class="exerciseName" value="${name}" placeholder="Exercise">
+<div class="exercise">${name}</div>
 
-<div class="exerciseRow">
+<div class="previous">${previousBest(name)}</div>
+
 <input class="weight" placeholder="Weight">
-<input class="reps" placeholder="Reps">
-<button onclick="saveSet(this)">Save</button>
-</div>
 
-<div class="previous"></div>
+<input class="reps" placeholder="Reps">
+
+<button onclick="logSet(this,'${name}')">Add Set</button>
 
 `
 
-container.appendChild(div)
-
-updatePrevious(div)
+document.getElementById("exerciseList").appendChild(div)
 
 }
 
 
+/* PREVIOUS BEST */
 
-/* ---------- SAVE SET ---------- */
+function previousBest(ex){
 
-function saveSet(btn){
+let best=0
 
-let card=btn.closest(".card")
+sessions.forEach(s=>{
+if(s.exercise===ex && s.weight>best)best=s.weight
+})
 
-let exercise=card.querySelector(".exerciseName").value
+if(best===0)return "No previous record"
+
+return "Previous Best: "+best+"kg"
+
+}
+
+
+/* LOG SET */
+
+function logSet(btn,exercise){
+
+let card=btn.parentElement
+
 let weight=parseFloat(card.querySelector(".weight").value)
 let reps=parseInt(card.querySelector(".reps").value)
 
-if(!exercise || !weight || !reps)return
+if(!weight || !reps)return
 
 let record={
 exercise,
@@ -282,63 +304,31 @@ localStorage.setItem("training_sessions",JSON.stringify(sessions))
 card.querySelector(".weight").value=""
 card.querySelector(".reps").value=""
 
-updatePrevious(card)
-
 renderLog()
 
 }
 
 
+/* PR CHECK */
 
-/* ---------- PR CHECK ---------- */
-
-function isPR(exercise,weight){
-
-let best=0
-
-sessions.forEach(s=>{
-if(s.exercise===exercise && s.weight>best)best=s.weight
-})
-
-return weight>=best
-
-}
-
-
-
-/* ---------- PREVIOUS BEST ---------- */
-
-function updatePrevious(card){
-
-let exercise=card.querySelector(".exerciseName").value
+function isPR(ex,w){
 
 let best=0
 
 sessions.forEach(s=>{
-if(s.exercise===exercise && s.weight>best)best=s.weight
+if(s.exercise===ex && s.weight>best)best=s.weight
 })
 
-let el=card.querySelector(".previous")
-
-if(best>0){
-
-el.innerHTML="Previous Best: "+best
-
-}else{
-
-el.innerHTML=""
-
-}
+return w>=best
 
 }
 
 
-
-/* ---------- LOG RENDER ---------- */
+/* RENDER LOG */
 
 function renderLog(){
 
-let container=document.getElementById("logContainer")
+let container=document.getElementById("logList")
 
 container.innerHTML=""
 
@@ -349,15 +339,20 @@ sorted.forEach(s=>{
 let pr=isPR(s.exercise,s.weight)
 
 let div=document.createElement("div")
+
 div.className="card"
 
 div.innerHTML=`
 
-<b>${s.exercise}</b><br>
-${s.weight} kg x ${s.reps}
-<br>
-${new Date(s.date).toLocaleDateString()}
+<div class="exercise">${s.exercise}</div>
+
+${s.weight}kg x ${s.reps}
+
 ${pr?'<span class="pr">🏆 PR</span>':""}
+
+<br>
+
+${new Date(s.date).toLocaleDateString()}
 
 `
 
@@ -368,27 +363,23 @@ container.appendChild(div)
 }
 
 
-
-/* ---------- CUSTOM WORKOUT ---------- */
+/* CUSTOM */
 
 function addCustomExercise(){
 
-let container=document.getElementById("customExercises")
-
 let input=document.createElement("input")
+
 input.placeholder="Exercise"
 
-container.appendChild(input)
+document.getElementById("customExerciseList").appendChild(input)
 
 }
 
-
-
 function saveCustomWorkout(){
 
-let name=document.getElementById("customName").value
+let name=document.getElementById("customWorkoutName").value
 
-let inputs=document.querySelectorAll("#customExercises input")
+let inputs=document.querySelectorAll("#customExerciseList input")
 
 let exercises=[]
 
@@ -402,13 +393,11 @@ customWorkouts.push({name,exercises})
 
 localStorage.setItem("custom_workouts",JSON.stringify(customWorkouts))
 
-alert("Workout Saved")
+alert("Saved")
 
 init()
 
 }
-
-
 
 </script>
 
