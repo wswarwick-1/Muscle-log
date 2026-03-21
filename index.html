@@ -1,64 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta charset="UTF-8">
 <title>Training Log</title>
 
 <style>
 
 body{
-background:black;
+background:#0a0a0a;
 color:white;
 font-family:Arial;
-padding:18px;
+margin:0;
+padding:20px;
 }
 
 h1{
+color:#ff2a2a;
 text-align:center;
-color:#D4AF37;
+}
+
+select,input,button{
+width:100%;
+padding:12px;
+margin:8px 0;
+border:none;
+border-radius:6px;
+font-size:16px;
+}
+
+select,input{
+background:#1a1a1a;
+color:white;
 }
 
 button{
-width:100%;
-padding:14px;
-margin:6px 0;
-background:#D4AF37;
-border:none;
-border-radius:10px;
+background:#ff2a2a;
+color:white;
 font-weight:bold;
 }
 
-input,select{
-width:100%;
-padding:12px;
-margin:6px 0;
-border-radius:8px;
-border:none;
+button:hover{
+background:#ff4444;
 }
 
 .card{
-background:#111;
-padding:14px;
+background:#141414;
+padding:15px;
+border-radius:10px;
 margin:10px 0;
-border-radius:12px;
-border:1px solid #D4AF37;
+border-left:4px solid #ff2a2a;
 }
 
-.exercise{
-font-weight:bold;
-color:#FFD700;
-margin-top:8px;
+.exerciseRow{
+display:flex;
+gap:8px;
+}
+
+.exerciseRow input{
+flex:1;
 }
 
 .pr{
-color:#FFD700;
+color:#ffd700;
 font-weight:bold;
 }
 
-.small{
-font-size:13px;
-color:#D4AF37;
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.tabs button{
+flex:1;
 }
 
 .hidden{
@@ -72,390 +86,329 @@ display:none;
 
 <h1>Training Log</h1>
 
+<div class="tabs">
 <button onclick="showPage('workoutPage')">Workout</button>
 <button onclick="showPage('logPage')">Log</button>
 <button onclick="showPage('customPage')">Custom</button>
+</div>
+
+
+<!-- WORKOUT PAGE -->
 
 <div id="workoutPage">
 
-<select id="workoutSelect"></select>
+<select id="workoutSelect" onchange="loadWorkout()">
+<option value="">Select Workout</option>
+</select>
 
-<select id="exerciseSelect"></select>
+<div id="exerciseContainer"></div>
 
-<div id="previousBest" class="small"></div>
-
-<input id="weight" placeholder="Weight">
-<input id="reps" placeholder="Reps">
-
-<button onclick="addSet()">Add Set</button>
-
-<div id="setList"></div>
-
-<button onclick="finishWorkout()">Finish Workout</button>
+<button onclick="addExercise()">Add Exercise</button>
 
 </div>
+
+
+
+<!-- LOG PAGE -->
 
 <div id="logPage" class="hidden">
 
-<h2 style="color:#D4AF37">Workout Log</h2>
+<h2>Training History</h2>
 
-<div id="log"></div>
+<div id="logContainer"></div>
 
 </div>
 
+
+
+<!-- CUSTOM PAGE -->
+
 <div id="customPage" class="hidden">
 
-<h2 style="color:#D4AF37">Custom Workout</h2>
+<h2>Create Custom Workout</h2>
 
-<input id="customWorkoutName" placeholder="Workout name">
-
-<input id="customExercise" placeholder="Exercise">
-
-<button onclick="addCustomExercise()">Add Exercise</button>
+<input id="customName" placeholder="Workout name">
 
 <div id="customExercises"></div>
 
+<button onclick="addCustomExercise()">Add Exercise</button>
 <button onclick="saveCustomWorkout()">Save Workout</button>
 
 </div>
 
+
+
 <script>
 
-/* -------- RECOVER LOG -------- */
+/* ---------- STORAGE ---------- */
 
-function loadRecoveredSessions(){
+let sessions = JSON.parse(localStorage.getItem("training_sessions") || "[]")
+let customWorkouts = JSON.parse(localStorage.getItem("custom_workouts") || "[]")
 
-let keys=["sessions","workoutSessions","trainingSessions","logSessions"]
 
-let recovered=[]
 
-keys.forEach(k=>{
+/* ---------- PRESET WORKOUTS ---------- */
 
-let data=localStorage.getItem(k)
+let presetWorkouts = {
 
-if(data){
-try{
-let parsed=JSON.parse(data)
-if(Array.isArray(parsed)) recovered=recovered.concat(parsed)
-}catch{}
+Push:["Bench Press","Incline Bench","Shoulder Press","Lateral Raise","Tricep Pushdown"],
+
+Pull:["Deadlift","Barbell Row","Lat Pulldown","Face Pull","Bicep Curl"],
+
+Legs:["Squat","Leg Press","Leg Curl","Calf Raise"],
+
+Powerlifting:["Squat","Bench Press","Deadlift"]
+
 }
 
+
+
+/* ---------- INIT ---------- */
+
+function init(){
+
+let select=document.getElementById("workoutSelect")
+
+select.innerHTML='<option value="">Select Workout</option>'
+
+Object.keys(presetWorkouts).forEach(w=>{
+select.innerHTML+=`<option>${w}</option>`
 })
 
-return recovered
-}
+customWorkouts.forEach(w=>{
+select.innerHTML+=`<option>${w.name}</option>`
+})
 
-let sessions=loadRecoveredSessions()
-
-let prs=JSON.parse(localStorage.getItem("prs"))||{}
-
-let workouts=JSON.parse(localStorage.getItem("workouts"))||{
-
-Push:["Bench Press","Overhead Press","Incline DB Press","Lateral Raise"],
-
-Pull:["Deadlift","Pull Up","Barbell Row","Face Pull"],
-
-Legs:["Squat","Leg Press","Romanian Deadlift","Leg Curl"]
+renderLog()
 
 }
 
-let currentSets=[]
+init()
 
-let customExercises=[]
 
-/* SAVE */
 
-function save(){
-
-localStorage.setItem("sessions",JSON.stringify(sessions))
-localStorage.setItem("prs",JSON.stringify(prs))
-localStorage.setItem("workouts",JSON.stringify(workouts))
-
-}
-
-/* NAV */
+/* ---------- PAGE SWITCH ---------- */
 
 function showPage(page){
 
-document.getElementById("workoutPage").classList.add("hidden")
-document.getElementById("logPage").classList.add("hidden")
-document.getElementById("customPage").classList.add("hidden")
+["workoutPage","logPage","customPage"].forEach(p=>{
+document.getElementById(p).classList.add("hidden")
+})
 
 document.getElementById(page).classList.remove("hidden")
 
-if(page==="logPage") renderLog()
-
 }
 
-/* WORKOUT LOAD */
 
-function loadWorkouts(){
 
-let w=document.getElementById("workoutSelect")
+/* ---------- LOAD WORKOUT ---------- */
 
-w.innerHTML=""
-
-Object.keys(workouts).forEach(name=>{
-
-let o=document.createElement("option")
-o.value=name
-o.textContent=name
-w.appendChild(o)
-
-})
-
-loadExercises()
-
-}
-
-function loadExercises(){
+function loadWorkout(){
 
 let workout=document.getElementById("workoutSelect").value
 
-let ex=document.getElementById("exerciseSelect")
+let exercises=presetWorkouts[workout]
 
-ex.innerHTML=""
-
-workouts[workout].forEach(e=>{
-
-let o=document.createElement("option")
-o.value=e
-o.textContent=e
-ex.appendChild(o)
-
+customWorkouts.forEach(w=>{
+if(w.name===workout)exercises=w.exercises
 })
 
-showPreviousBest()
+let container=document.getElementById("exerciseContainer")
+
+container.innerHTML=""
+
+if(!exercises)return
+
+exercises.forEach(e=>addExercise(e))
 
 }
 
-document.getElementById("workoutSelect").onchange=loadExercises
-document.getElementById("exerciseSelect").onchange=showPreviousBest
 
-/* PREVIOUS BEST */
 
-function showPreviousBest(){
+/* ---------- ADD EXERCISE ---------- */
 
-let ex=document.getElementById("exerciseSelect").value
+function addExercise(name=""){
 
-let box=document.getElementById("previousBest")
+let container=document.getElementById("exerciseContainer")
 
-if(prs[ex]){
-box.innerHTML="Previous Best: "+prs[ex].weight+"kg x "+prs[ex].reps
-}else{
-box.innerHTML="Previous Best: none"
-}
+let div=document.createElement("div")
+div.className="card"
 
-}
+div.innerHTML=`
 
-/* ADD SET */
+<input class="exerciseName" value="${name}" placeholder="Exercise">
 
-function addSet(){
-
-let ex=document.getElementById("exerciseSelect").value
-let w=Number(document.getElementById("weight").value)
-let r=Number(document.getElementById("reps").value)
-
-if(!w||!r) return
-
-currentSets.push({exercise:ex,weight:w,reps:r})
-
-document.getElementById("weight").value=""
-document.getElementById("reps").value=""
-
-renderSets()
-
-}
-
-/* SHOW SETS */
-
-function renderSets(){
-
-let box=document.getElementById("setList")
-
-box.innerHTML=""
-
-currentSets.forEach((s,i)=>{
-
-box.innerHTML+=`
-
-<div class="card">
-
-Set ${i+1}<br>
-${s.exercise}<br>
-${s.weight}kg x ${s.reps}
-
+<div class="exerciseRow">
+<input class="weight" placeholder="Weight">
+<input class="reps" placeholder="Reps">
+<button onclick="saveSet(this)">Save</button>
 </div>
+
+<div class="previous"></div>
 
 `
 
+container.appendChild(div)
+
+updatePrevious(div)
+
+}
+
+
+
+/* ---------- SAVE SET ---------- */
+
+function saveSet(btn){
+
+let card=btn.closest(".card")
+
+let exercise=card.querySelector(".exerciseName").value
+let weight=parseFloat(card.querySelector(".weight").value)
+let reps=parseInt(card.querySelector(".reps").value)
+
+if(!exercise || !weight || !reps)return
+
+let record={
+exercise,
+weight,
+reps,
+date:Date.now()
+}
+
+sessions.push(record)
+
+localStorage.setItem("training_sessions",JSON.stringify(sessions))
+
+card.querySelector(".weight").value=""
+card.querySelector(".reps").value=""
+
+updatePrevious(card)
+
+renderLog()
+
+}
+
+
+
+/* ---------- PR CHECK ---------- */
+
+function isPR(exercise,weight){
+
+let best=0
+
+sessions.forEach(s=>{
+if(s.exercise===exercise && s.weight>best)best=s.weight
 })
 
-}
-
-/* PR */
-
-function checkPR(ex,w,r){
-
-if(!prs[ex]||w>prs[ex].weight){
-
-prs[ex]={weight:w,reps:r}
-return true
+return weight>=best
 
 }
 
-return false
 
-}
 
-/* FINISH */
+/* ---------- PREVIOUS BEST ---------- */
 
-function finishWorkout(){
+function updatePrevious(card){
 
-if(currentSets.length===0) return
+let exercise=card.querySelector(".exerciseName").value
 
-let workout=document.getElementById("workoutSelect").value
+let best=0
 
-let session={
-
-date:new Date().toLocaleDateString(),
-workout:workout,
-sets:[...currentSets]
-
-}
-
-sessions.unshift(session)
-
-currentSets.forEach(s=>{
-checkPR(s.exercise,s.weight,s.reps)
+sessions.forEach(s=>{
+if(s.exercise===exercise && s.weight>best)best=s.weight
 })
 
-currentSets=[]
+let el=card.querySelector(".previous")
 
-save()
+if(best>0){
 
-renderSets()
+el.innerHTML="Previous Best: "+best
 
-alert("Workout saved")
+}else{
+
+el.innerHTML=""
 
 }
 
-/* LOG */
+}
+
+
+
+/* ---------- LOG RENDER ---------- */
 
 function renderLog(){
 
-let log=document.getElementById("log")
+let container=document.getElementById("logContainer")
 
-log.innerHTML=""
+container.innerHTML=""
 
-sessions.forEach(s=>{
+let sorted=[...sessions].sort((a,b)=>b.date-a.date)
 
-let grouped={}
+sorted.forEach(s=>{
 
-let volume=0
+let pr=isPR(s.exercise,s.weight)
 
-s.sets.forEach(set=>{
+let div=document.createElement("div")
+div.className="card"
 
-if(!grouped[set.exercise]) grouped[set.exercise]=[]
+div.innerHTML=`
 
-grouped[set.exercise].push(set)
-
-})
-
-let html=`
-
-<div class="card">
-
-<b>${s.workout}</b><br>
-<span class="small">${s.date}</span><br><br>
-
-`
-
-Object.keys(grouped).forEach(ex=>{
-
-html+=`<div class="exercise">${ex}</div>`
-
-grouped[ex].forEach(set=>{
-
-volume+=set.weight*set.reps
-
-let pr=prs[ex] && prs[ex].weight===set.weight
-
-html+=`
-${set.weight}kg x ${set.reps}
-${pr?"<span class='pr'> PR</span>":""}
+<b>${s.exercise}</b><br>
+${s.weight} kg x ${s.reps}
 <br>
+${new Date(s.date).toLocaleDateString()}
+${pr?'<span class="pr">🏆 PR</span>':""}
+
 `
 
-})
-
-html+="<br>"
-
-})
-
-html+=`<div class="small">Volume: ${volume}kg</div>`
-
-html+="</div>"
-
-log.innerHTML+=html
+container.appendChild(div)
 
 })
 
 }
 
-/* CUSTOM WORKOUT */
+
+
+/* ---------- CUSTOM WORKOUT ---------- */
 
 function addCustomExercise(){
 
-let ex=document.getElementById("customExercise").value
+let container=document.getElementById("customExercises")
 
-if(!ex) return
+let input=document.createElement("input")
+input.placeholder="Exercise"
 
-customExercises.push(ex)
-
-document.getElementById("customExercise").value=""
-
-renderCustomExercises()
+container.appendChild(input)
 
 }
 
-function renderCustomExercises(){
 
-let box=document.getElementById("customExercises")
-
-box.innerHTML=""
-
-customExercises.forEach(e=>{
-
-box.innerHTML+=`<div class="card">${e}</div>`
-
-})
-
-}
 
 function saveCustomWorkout(){
 
-let name=document.getElementById("customWorkoutName").value
+let name=document.getElementById("customName").value
 
-if(!name||customExercises.length===0) return
+let inputs=document.querySelectorAll("#customExercises input")
 
-workouts[name]=[...customExercises]
+let exercises=[]
 
-customExercises=[]
+inputs.forEach(i=>{
+if(i.value)exercises.push(i.value)
+})
 
-document.getElementById("customExercises").innerHTML=""
+if(!name || exercises.length===0)return
 
-save()
+customWorkouts.push({name,exercises})
 
-loadWorkouts()
+localStorage.setItem("custom_workouts",JSON.stringify(customWorkouts))
 
-alert("Workout saved")
+alert("Workout Saved")
+
+init()
 
 }
 
-/* START */
 
-loadWorkouts()
 
 </script>
 
