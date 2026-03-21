@@ -3,6 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>Training Log</title>
 
 <style>
@@ -15,16 +16,35 @@ color:#F5F5F5;
 }
 
 header{
-padding:18px;
+padding:16px;
 font-size:22px;
-font-weight:bold;
 text-align:center;
+font-weight:bold;
 border-bottom:1px solid #222;
+}
+
+.tabs{
+display:flex;
+background:#1A1A1A;
+}
+
+.tabs button{
+flex:1;
+padding:14px;
+background:none;
+border:none;
+color:#999;
+font-size:16px;
+font-weight:bold;
+}
+
+.tabs button.active{
+color:#FFD54A;
+border-bottom:3px solid #FFD54A;
 }
 
 .container{
 padding:16px;
-padding-bottom:100px;
 }
 
 select,input{
@@ -38,7 +58,7 @@ color:white;
 font-size:16px;
 }
 
-button{
+button.main{
 width:100%;
 padding:14px;
 margin-top:10px;
@@ -61,7 +81,6 @@ box-shadow:0 2px 6px rgba(0,0,0,.4);
 .exerciseTitle{
 font-size:18px;
 font-weight:bold;
-margin-bottom:4px;
 }
 
 .previous{
@@ -71,8 +90,8 @@ margin-bottom:10px;
 }
 
 .set{
-padding:6px 0;
 font-size:14px;
+margin-top:6px;
 }
 
 .pr{
@@ -81,10 +100,17 @@ font-weight:bold;
 margin-left:6px;
 }
 
+.dateHeader{
+font-size:16px;
+font-weight:bold;
+margin:20px 0 10px 0;
+color:#FFD54A;
+}
+
 .fab{
 position:fixed;
 right:20px;
-bottom:95px;
+bottom:20px;
 width:60px;
 height:60px;
 border-radius:50%;
@@ -98,33 +124,8 @@ font-weight:bold;
 box-shadow:0 4px 10px rgba(0,0,0,.5);
 }
 
-.bottomNav{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:#1A1A1A;
-display:flex;
-border-top:1px solid #222;
-}
-
-.bottomNav button{
-flex:1;
-background:none;
-color:white;
-padding:16px;
-font-size:14px;
-}
-
 .hidden{
 display:none;
-}
-
-.dateHeader{
-font-size:16px;
-font-weight:bold;
-margin:20px 0 10px 0;
-color:#FFD54A;
 }
 
 </style>
@@ -135,9 +136,13 @@ color:#FFD54A;
 
 <header>Training Log</header>
 
-<div class="container">
+<div class="tabs">
+<button id="tabWorkout" class="active" onclick="showPage('workout')">Workout</button>
+<button id="tabLog" onclick="showPage('log')">Log</button>
+<button id="tabCustom" onclick="showPage('custom')">Custom</button>
+</div>
 
-<!-- WORKOUT PAGE -->
+<div class="container">
 
 <div id="workoutPage">
 
@@ -147,41 +152,27 @@ color:#FFD54A;
 
 </div>
 
-
-<!-- LOG PAGE -->
-
 <div id="logPage" class="hidden">
 
 <div id="logContainer"></div>
 
 </div>
 
-
-<!-- CUSTOM PAGE -->
-
 <div id="customPage" class="hidden">
 
-<input id="customWorkoutName" placeholder="Workout Name">
+<input id="customWorkoutName" placeholder="Workout name">
 
 <div id="customExercises"></div>
 
-<button onclick="addCustomExercise()">Add Exercise</button>
+<button class="main" onclick="addCustomExercise()">Add Exercise</button>
 
-<button onclick="saveCustomWorkout()">Save Workout</button>
-
-</div>
+<button class="main" onclick="saveCustomWorkout()">Save Workout</button>
 
 </div>
 
+</div>
 
 <div class="fab" onclick="addExercise()">+</div>
-
-<div class="bottomNav">
-<button onclick="showPage('workoutPage')">Workout</button>
-<button onclick="showPage('logPage')">Log</button>
-<button onclick="showPage('customPage')">Custom</button>
-</div>
-
 
 <script>
 
@@ -189,15 +180,10 @@ let sessions=JSON.parse(localStorage.getItem("training_sessions")||"[]")
 let customWorkouts=JSON.parse(localStorage.getItem("custom_workouts")||"[]")
 
 let workouts={
-
-Push:["Bench Press","Incline Bench","Shoulder Press","Lateral Raise"],
-
-Pull:["Deadlift","Barbell Row","Lat Pulldown","Bicep Curl"],
-
-Legs:["Squat","Leg Press","Leg Curl","Calf Raise"]
-
+Push:["Bench Press","Incline Bench","Shoulder Press"],
+Pull:["Deadlift","Barbell Row","Lat Pulldown"],
+Legs:["Squat","Leg Press","Leg Curl"]
 }
-
 
 function init(){
 
@@ -220,13 +206,29 @@ init()
 
 function showPage(page){
 
-["workoutPage","logPage","customPage"].forEach(p=>{
-document.getElementById(p).classList.add("hidden")
-})
+document.getElementById("workoutPage").classList.add("hidden")
+document.getElementById("logPage").classList.add("hidden")
+document.getElementById("customPage").classList.add("hidden")
 
-document.getElementById(page).classList.remove("hidden")
+document.getElementById("tabWorkout").classList.remove("active")
+document.getElementById("tabLog").classList.remove("active")
+document.getElementById("tabCustom").classList.remove("active")
 
-if(page==="logPage")renderLog()
+if(page==="workout"){
+document.getElementById("workoutPage").classList.remove("hidden")
+document.getElementById("tabWorkout").classList.add("active")
+}
+
+if(page==="log"){
+document.getElementById("logPage").classList.remove("hidden")
+document.getElementById("tabLog").classList.add("active")
+renderLog()
+}
+
+if(page==="custom"){
+document.getElementById("customPage").classList.remove("hidden")
+document.getElementById("tabCustom").classList.add("active")
+}
 
 }
 
@@ -268,7 +270,7 @@ div.innerHTML=`
 
 <input class="reps" placeholder="Reps">
 
-<button onclick="addSet(this,'${name}')">Add Set</button>
+<button class="main" onclick="addSet(this,'${name}')">Add Set</button>
 
 <div class="setList"></div>
 
