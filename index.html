@@ -1,437 +1,47 @@
-<!DOCTYPE html>
-<html>
-<head>
+import React, { useState } from "react"; import { Card, CardContent } from "@/components/ui/card"; import { Button } from "@/components/ui/button";
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+export default function WorkoutApp(){ const [workouts,setWorkouts]=useState([]); const [exercise,setExercise]=useState(""); const [sets,setSets]=useState(""); const [reps,setReps]=useState("");
 
-<title>Training Log</title>
+function addWorkout(){ if(!exercise) return; const newEntry={exercise,sets,reps,date:new Date().toLocaleDateString()}; setWorkouts([...workouts,newEntry]); setExercise(""); setSets(""); setReps(""); }
 
-<style>
+return ( <div className="min-h-screen bg-neutral-900 text-yellow-400 p-6 grid gap-6"> <h1 className="text-3xl font-bold">Workout Tracker</h1>
 
-body{
-margin:0;
-font-family:Roboto,Arial;
-background:#121212;
-color:#F5F5F5;
-}
+<Card className="rounded-2xl bg-neutral-800">
+    <CardContent className="p-4 grid gap-2">
+      <input
+        className="p-2 rounded bg-neutral-700"
+        placeholder="Exercise"
+        value={exercise}
+        onChange={(e)=>setExercise(e.target.value)}
+      />
+      <input
+        className="p-2 rounded bg-neutral-700"
+        placeholder="Sets"
+        value={sets}
+        onChange={(e)=>setSets(e.target.value)}
+      />
+      <input
+        className="p-2 rounded bg-neutral-700"
+        placeholder="Reps"
+        value={reps}
+        onChange={(e)=>setReps(e.target.value)}
+      />
+      <Button onClick={addWorkout}>Add</Button>
+    </CardContent>
+  </Card>
 
-header{
-padding:16px;
-font-size:22px;
-text-align:center;
-font-weight:bold;
-border-bottom:1px solid #222;
-}
-
-.tabs{
-display:flex;
-background:#1A1A1A;
-}
-
-.tabs button{
-flex:1;
-padding:14px;
-background:none;
-border:none;
-color:#999;
-font-size:16px;
-font-weight:bold;
-}
-
-.tabs button.active{
-color:#FFD54A;
-border-bottom:3px solid #FFD54A;
-}
-
-.container{
-padding:16px;
-}
-
-select,input{
-width:100%;
-padding:14px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-background:#1E1E1E;
-color:white;
-font-size:16px;
-}
-
-button.main{
-width:100%;
-padding:14px;
-margin-top:10px;
-border:none;
-border-radius:10px;
-background:#FFD54A;
-color:black;
-font-weight:bold;
-font-size:16px;
-}
-
-.card{
-background:#1E1E1E;
-padding:16px;
-border-radius:14px;
-margin-bottom:16px;
-box-shadow:0 2px 6px rgba(0,0,0,.4);
-}
-
-.exerciseTitle{
-font-size:18px;
-font-weight:bold;
-}
-
-.previous{
-font-size:13px;
-color:#9E9E9E;
-margin-bottom:10px;
-}
-
-.set{
-font-size:14px;
-margin-top:6px;
-}
-
-.pr{
-color:#FFD54A;
-font-weight:bold;
-margin-left:6px;
-}
-
-.dateHeader{
-font-size:16px;
-font-weight:bold;
-margin:20px 0 10px 0;
-color:#FFD54A;
-}
-
-.fab{
-position:fixed;
-right:20px;
-bottom:20px;
-width:60px;
-height:60px;
-border-radius:50%;
-background:#FFD54A;
-color:black;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:32px;
-font-weight:bold;
-box-shadow:0 4px 10px rgba(0,0,0,.5);
-}
-
-.hidden{
-display:none;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<header>Training Log</header>
-
-<div class="tabs">
-<button id="tabWorkout" class="active" onclick="showPage('workout')">Workout</button>
-<button id="tabLog" onclick="showPage('log')">Log</button>
-<button id="tabCustom" onclick="showPage('custom')">Custom</button>
+  <Card className="rounded-2xl bg-neutral-800">
+    <CardContent className="p-4 grid gap-2">
+      <h2 className="text-xl">Training Log</h2>
+      {workouts.map((w,i)=> (
+        <div key={i} className="flex justify-between bg-neutral-700 p-2 rounded">
+          <span>{w.exercise}</span>
+          <span>{w.sets} x {w.reps}</span>
+          <span>{w.date}</span>
+        </div>
+      ))}
+    </CardContent>
+  </Card>
 </div>
 
-<div class="container">
-
-<div id="workoutPage">
-
-<select id="workoutSelect" onchange="loadWorkout()"></select>
-
-<div id="exerciseContainer"></div>
-
-</div>
-
-<div id="logPage" class="hidden">
-
-<div id="logContainer"></div>
-
-</div>
-
-<div id="customPage" class="hidden">
-
-<input id="customWorkoutName" placeholder="Workout name">
-
-<div id="customExercises"></div>
-
-<button class="main" onclick="addCustomExercise()">Add Exercise</button>
-
-<button class="main" onclick="saveCustomWorkout()">Save Workout</button>
-
-</div>
-
-</div>
-
-<div class="fab" onclick="addExercise()">+</div>
-
-<script>
-
-let sessions=JSON.parse(localStorage.getItem("training_sessions")||"[]")
-let customWorkouts=JSON.parse(localStorage.getItem("custom_workouts")||"[]")
-
-let workouts={
-Push:["Bench Press","Incline Bench","Shoulder Press"],
-Pull:["Deadlift","Barbell Row","Lat Pulldown"],
-Legs:["Squat","Leg Press","Leg Curl"]
-}
-
-function init(){
-
-let select=document.getElementById("workoutSelect")
-
-select.innerHTML=""
-
-Object.keys(workouts).forEach(w=>{
-select.innerHTML+=`<option>${w}</option>`
-})
-
-customWorkouts.forEach(w=>{
-select.innerHTML+=`<option>${w.name}</option>`
-})
-
-}
-
-init()
-
-
-function showPage(page){
-
-document.getElementById("workoutPage").classList.add("hidden")
-document.getElementById("logPage").classList.add("hidden")
-document.getElementById("customPage").classList.add("hidden")
-
-document.getElementById("tabWorkout").classList.remove("active")
-document.getElementById("tabLog").classList.remove("active")
-document.getElementById("tabCustom").classList.remove("active")
-
-if(page==="workout"){
-document.getElementById("workoutPage").classList.remove("hidden")
-document.getElementById("tabWorkout").classList.add("active")
-}
-
-if(page==="log"){
-document.getElementById("logPage").classList.remove("hidden")
-document.getElementById("tabLog").classList.add("active")
-renderLog()
-}
-
-if(page==="custom"){
-document.getElementById("customPage").classList.remove("hidden")
-document.getElementById("tabCustom").classList.add("active")
-}
-
-}
-
-
-function loadWorkout(){
-
-let workout=document.getElementById("workoutSelect").value
-
-let exercises=workouts[workout]
-
-customWorkouts.forEach(w=>{
-if(w.name===workout)exercises=w.exercises
-})
-
-let container=document.getElementById("exerciseContainer")
-
-container.innerHTML=""
-
-if(!exercises)return
-
-exercises.forEach(e=>createExerciseCard(e))
-
-}
-
-
-function createExerciseCard(name){
-
-let div=document.createElement("div")
-
-div.className="card"
-
-div.innerHTML=`
-
-<div class="exerciseTitle">${name}</div>
-
-<div class="previous">${previousBest(name)}</div>
-
-<input class="weight" placeholder="Weight">
-
-<input class="reps" placeholder="Reps">
-
-<button class="main" onclick="addSet(this,'${name}')">Add Set</button>
-
-<div class="setList"></div>
-
-`
-
-document.getElementById("exerciseContainer").appendChild(div)
-
-}
-
-
-function previousBest(ex){
-
-let best=0
-
-sessions.forEach(s=>{
-if(s.exercise===ex && s.weight>best)best=s.weight
-})
-
-if(best===0)return "No previous record"
-
-return "Previous Best: "+best+"kg"
-
-}
-
-
-function addSet(btn,exercise){
-
-let card=btn.parentElement
-
-let weight=parseFloat(card.querySelector(".weight").value)
-let reps=parseInt(card.querySelector(".reps").value)
-
-if(!weight || !reps)return
-
-let pr=isPR(exercise,weight)
-
-let record={
-exercise,
-weight,
-reps,
-date:Date.now(),
-pr
-}
-
-sessions.push(record)
-
-localStorage.setItem("training_sessions",JSON.stringify(sessions))
-
-let badge=pr?'<span class="pr">🏆 PR</span>':""
-
-card.querySelector(".setList").innerHTML+=`<div class="set">${weight}kg x ${reps} ${badge}</div>`
-
-card.querySelector(".weight").value=""
-card.querySelector(".reps").value=""
-
-}
-
-
-function isPR(ex,w){
-
-let best=0
-
-sessions.forEach(s=>{
-if(s.exercise===ex && s.weight>best)best=s.weight
-})
-
-return w>best
-
-}
-
-
-function renderLog(){
-
-let container=document.getElementById("logContainer")
-
-container.innerHTML=""
-
-let sorted=[...sessions].sort((a,b)=>b.date-a.date)
-
-let lastDate=""
-
-sorted.forEach(s=>{
-
-let date=new Date(s.date).toLocaleDateString()
-
-if(date!==lastDate){
-
-container.innerHTML+=`<div class="dateHeader">${date}</div>`
-
-lastDate=date
-
-}
-
-let badge=s.pr?'<span class="pr">🏆 PR</span>':""
-
-let div=document.createElement("div")
-
-div.className="card"
-
-div.innerHTML=`
-
-<b>${s.exercise}</b><br>
-
-${s.weight}kg x ${s.reps}
-
-${badge}
-
-`
-
-container.appendChild(div)
-
-})
-
-}
-
-
-function addExercise(){
-
-let name=prompt("Exercise name")
-
-if(name)createExerciseCard(name)
-
-}
-
-
-function addCustomExercise(){
-
-let input=document.createElement("input")
-
-input.placeholder="Exercise"
-
-document.getElementById("customExercises").appendChild(input)
-
-}
-
-
-function saveCustomWorkout(){
-
-let name=document.getElementById("customWorkoutName").value
-
-let inputs=document.querySelectorAll("#customExercises input")
-
-let exercises=[]
-
-inputs.forEach(i=>{
-if(i.value)exercises.push(i.value)
-})
-
-if(!name || exercises.length===0)return
-
-customWorkouts.push({name,exercises})
-
-localStorage.setItem("custom_workouts",JSON.stringify(customWorkouts))
-
-alert("Workout Saved")
-
-init()
-
-}
-
-</script>
-
-</body>
-</html>
+); }
