@@ -1,47 +1,215 @@
-import React, { useState } from "react"; import { Card, CardContent } from "@/components/ui/card"; import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  SafeAreaView
+} from "react-native";
+import { create } from "zustand";
 
-export default function WorkoutApp(){ const [workouts,setWorkouts]=useState([]); const [exercise,setExercise]=useState(""); const [sets,setSets]=useState(""); const [reps,setReps]=useState("");
+/////////////////////////////
+// 🧠 PROGRESSION LOGIC
+/////////////////////////////
 
-function addWorkout(){ if(!exercise) return; const newEntry={exercise,sets,reps,date:new Date().toLocaleDateString()}; setWorkouts([...workouts,newEntry]); setExercise(""); setSets(""); setReps(""); }
+function calculateNextWeight({ lastWeight, reps, targetReps, rir }) {
+  if (rir >= 3) return lastWeight + 5;
+  if (rir <= 1 && reps < targetReps) return lastWeight - 5;
+  return lastWeight;
+}
 
-return ( <div className="min-h-screen bg-neutral-900 text-yellow-400 p-6 grid gap-6"> <h1 className="text-3xl font-bold">Workout Tracker</h1>
+/////////////////////////////
+// 🗂 GLOBAL STORE
+/////////////////////////////
 
-<Card className="rounded-2xl bg-neutral-800">
-    <CardContent className="p-4 grid gap-2">
-      <input
-        className="p-2 rounded bg-neutral-700"
-        placeholder="Exercise"
-        value={exercise}
-        onChange={(e)=>setExercise(e.target.value)}
-      />
-      <input
-        className="p-2 rounded bg-neutral-700"
-        placeholder="Sets"
-        value={sets}
-        onChange={(e)=>setSets(e.target.value)}
-      />
-      <input
-        className="p-2 rounded bg-neutral-700"
-        placeholder="Reps"
-        value={reps}
-        onChange={(e)=>setReps(e.target.value)}
-      />
-      <Button onClick={addWorkout}>Add</Button>
-    </CardContent>
-  </Card>
+const useStore = create((set) => ({
+  logs: [],
+  fatigue: 0,
 
-  <Card className="rounded-2xl bg-neutral-800">
-    <CardContent className="p-4 grid gap-2">
-      <h2 className="text-xl">Training Log</h2>
-      {workouts.map((w,i)=> (
-        <div key={i} className="flex justify-between bg-neutral-700 p-2 rounded">
-          <span>{w.exercise}</span>
-          <span>{w.sets} x {w.reps}</span>
-          <span>{w.date}</span>
-        </div>
-      ))}
-    </CardContent>
-  </Card>
-</div>
+  addSet: (setData) =>
+    set((state) => ({
+      logs: [setData, ...state.logs]
+    })),
 
-); }
+  updateFatigue: (rir) =>
+    set((state) => ({
+      fatigue: state.fatigue + (5 - rir)
+    })),
+
+  reset: () => set({ logs: [], fatigue: 0 })
+}));
+
+/////////////////////////////
+// 🎨 STYLES
+/////////////////////////////
+
+const colors = {
+  bg: "#121212",
+  card: "#1e1e1e",
+  accent: "#FFD60A",
+  text: "#ffffff",
+  sub: "#aaaaaa"
+};
+
+/////////////////////////////
+// 🏋️ MAIN APP
+/////////////////////////////
+
+export default function App() {
+  const { logs, fatigue, addSet, updateFatigue, reset } = useStore();
+
+  const [weight, setWeight] = useState("");
+  const [reps, setReps] = useState("");
+  const [rir, setRir] = useState("");
+
+  const handleAdd = () => {
+    if (!weight || !reps || !rir) return;
+
+    const nextWeight = calculateNextWeight({
+      lastWeight: Number(weight),
+      reps: Number(reps),
+      targetReps: 10,
+      rir: Number(rir)
+    });
+
+    const entry = {
+      id: Date.now().toString(),
+      exercise: "Bench Press",
+      weight: Number(weight),
+      reps: Number(reps),
+      rir: Number(rir),
+      nextWeight
+    };
+
+    addSet(entry);
+    updateFatigue(Number(rir));
+
+    setWeight("");
+    setReps("");
+    setRir("");
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ padding: 20 }}>
+
+        {/* HEADER */}
+        <Text style={{
+          color: colors.accent,
+          fontSize: 28,
+          fontWeight: "bold",
+          marginBottom: 10
+        }}>
+          Hypertrophy Tracker
+        </Text>
+
+        <Text style={{ color: colors.sub, marginBottom: 20 }}>
+          Fatigue Score: {fatigue}
+        </Text>
+
+        {/* INPUT CARD */}
+        <View style={{
+          backgroundColor: colors.card,
+          padding: 15,
+          borderRadius: 12,
+          marginBottom: 20
+        }}>
+          <Text style={{ color: colors.text, marginBottom: 10 }}>
+            Bench Press
+          </Text>
+
+          <TextInput
+            placeholder="Weight"
+            placeholderTextColor="#666"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+            style={inputStyle}
+          />
+
+          <TextInput
+            placeholder="Reps"
+            placeholderTextColor="#666"
+            value={reps}
+            onChangeText={setReps}
+            keyboardType="numeric"
+            style={inputStyle}
+          />
+
+          <TextInput
+            placeholder="RIR"
+            placeholderTextColor="#666"
+            value={rir}
+            onChangeText={setRir}
+            keyboardType="numeric"
+            style={inputStyle}
+          />
+
+          <TouchableOpacity style={buttonStyle} onPress={handleAdd}>
+            <Text style={{ color: "#000", fontWeight: "bold" }}>
+              Log Set
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* LOG LIST */}
+        <FlatList
+          data={logs}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={{
+              backgroundColor: colors.card,
+              padding: 15,
+              borderRadius: 12,
+              marginBottom: 10
+            }}>
+              <Text style={{ color: colors.text }}>
+                {item.exercise}
+              </Text>
+
+              <Text style={{ color: colors.sub }}>
+                {item.weight}kg × {item.reps} reps (RIR {item.rir})
+              </Text>
+
+              <Text style={{ color: colors.accent }}>
+                Next: {item.nextWeight}kg
+              </Text>
+            </View>
+          )}
+        />
+
+        {/* RESET BUTTON */}
+        <TouchableOpacity
+          onPress={reset}
+          style={{
+            marginTop: 10,
+            alignItems: "center"
+          }}
+        >
+          <Text style={{ color: "red" }}>Reset Workout</Text>
+        </TouchableOpacity>
+
+      </View>
+    </SafeAreaView>
+  );
+}
+
+/////////////////////////////
+// ✨ REUSABLE STYLES
+/////////////////////////////
+
+const inputStyle = {
+  backgroundColor: "#2a2a2a",
+  color: "#fff",
+  padding: 10,
+  borderRadius: 8,
+  marginBottom: 10
+};
+
+const buttonStyle = {
+  backgroundColor: colors.accent,
+  padding: 12,
+  borderRadius: 10,
+  alignItems: "center"
+};
