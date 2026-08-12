@@ -44,7 +44,7 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:700px;marg
 </main>
 
 <main id="pageLog" class="page hidden">
-<div class="section-title">Training History</div><div id="logContainer"></div>
+<div class="section-title">Training History</div><div class="small" style="margin:0 3px 12px;">Historical dates are read from the original saved session data. Dates are never guessed.</div><div id="logContainer"></div>
 <div class="backup-card"><div style="font-weight:850;margin-bottom:5px;">Data Protection</div>
 <div class="small">Keep a backup of your training history so it can be restored if the app is reinstalled.</div>
 <button class="secondary" onclick="exportBackup()">Export Training Backup</button>
@@ -67,6 +67,11 @@ button,input,select{font:inherit}button{cursor:pointer}.app{max-width:700px;marg
 <div id="exerciseModal" class="modal hidden" onclick="closeModal(event)">
 <div class="modal-box" onclick="event.stopPropagation()"><div class="modal-title">Choose Exercise</div>
 <input id="exerciseSearch" class="text-input" placeholder="Search exercises..." oninput="filterExercises()">
+<div style="display:flex;gap:8px;margin-top:10px;">
+<input id="customExerciseName" class="text-input" placeholder="Add your own exercise">
+<button class="change-btn" style="padding:0 14px;white-space:nowrap;" onclick="addCustomExerciseOnFly()">ADD</button>
+</div>
+<div class="small" style="margin-top:7px;">Add any exercise instantly. It will be saved to your exercise library.</div>
 <div id="exerciseChoices" style="margin-top:12px;"></div>
 <button class="secondary" onclick="closeExercisePicker()">Cancel</button></div>
 </div>
@@ -84,9 +89,10 @@ const PROGRAMMES={
 {name:"Romanian Deadlift",sets:3,min:6,max:10},{name:"Hack Squat",sets:3,min:8,max:12},{name:"Lying Leg Curl",sets:3,min:8,max:12},{name:"Leg Extension",sets:2,min:10,max:15},{name:"Standing Calf Raise",sets:4,min:8,max:12},{name:"Seated Calf Raise",sets:4,min:10,max:20},{name:"Single-Leg Calf Raise",sets:2,min:12,max:20}]}
 };
 
-const EXERCISE_LIBRARY=["Back Squat","Front Squat","Hack Squat","Leg Press","Leg Extension","Bulgarian Split Squat","Romanian Deadlift","Conventional Deadlift","Lying Leg Curl","Seated Leg Curl","Standing Calf Raise","Seated Calf Raise","Single-Leg Calf Raise","Barbell Bench Press","Close-Grip Bench Press","Incline Barbell Press","Incline Dumbbell Press","Dumbbell Bench Press","Chest-Supported Row","Barbell Row","Cable Row","Lat Pulldown","Pull-Up","Seated Shoulder Press","Dumbbell Shoulder Press","Cable Lateral Raise","Dumbbell Lateral Raise","Face Pull","EZ-Bar Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Cable Curl","Triceps Pressdown","Cable Triceps Pressdown","Overhead Cable Triceps Extension","Skull Crusher"];
+const DEFAULT_EXERCISE_LIBRARY=["Back Squat","Front Squat","Hack Squat","Leg Press","Leg Extension","Bulgarian Split Squat","Romanian Deadlift","Conventional Deadlift","Lying Leg Curl","Seated Leg Curl","Standing Calf Raise","Seated Calf Raise","Single-Leg Calf Raise","Barbell Bench Press","Close-Grip Bench Press","Incline Barbell Press","Incline Dumbbell Press","Dumbbell Bench Press","Chest-Supported Row","Barbell Row","Cable Row","Lat Pulldown","Pull-Up","Seated Shoulder Press","Dumbbell Shoulder Press","Cable Lateral Raise","Dumbbell Lateral Raise","Face Pull","EZ-Bar Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Cable Curl","Triceps Pressdown","Cable Triceps Pressdown","Overhead Cable Triceps Extension","Skull Crusher"];
+let customExerciseLibrary=[];
 
-const APP_KEY="training_log_v4";
+const APP_KEY="training_log_v5";
 const OLD_KEYS=["training_log_v3","training_log_v2","training_sessions","sessions","workoutSessions","trainingSessions","logSessions","trainingLog","workoutLog","workoutHistory","trainingHistory","log"];
 let data={sessions:[],customWorkouts:[]},currentWorkout=null,currentExercises=[],currentSets={},exerciseBeingChanged=null;
 
@@ -164,17 +170,28 @@ function recoverSessions(){
 }
 
 function loadData(){
+    /* V5 rebuilds history from the original legacy stores before trusting the
+       current store. This prevents the V4 migration's mistaken "today" date
+       from becoming authoritative. */
     const current=parse(localStorage.getItem(APP_KEY));
     if(current){
         data.sessions=Array.isArray(current.sessions)?current.sessions:[];
         data.customWorkouts=Array.isArray(current.customWorkouts)?current.customWorkouts:[];
     }
     const recovered=recoverSessions();
+    const contentSig=s=>JSON.stringify({workout:s.workout||"",sets:(s.sets||[]).map(x=>({exercise:x.exercise||"",weight:Number(x.weight)||0,reps:Number(x.reps)||0}))});
+    const recoveredMap=new Map(recovered.map(s=>[contentSig(s),s]));
+    data.sessions=data.sessions.map(s=>{
+        const r=recoveredMap.get(contentSig(s));
+        return (r && r.date!==null && r.date!==undefined) ? {...s,date:r.date,sets:r.sets} : s;
+    });
     const existing=new Set(data.sessions.map(sessionSignature));
     recovered.forEach(s=>{const sig=sessionSignature(s);if(!existing.has(sig)){data.sessions.push(s);existing.add(sig)}});
     saveData();
 }
-function saveData(){localStorage.setItem(APP_KEY,JSON.stringify(data))}
+function saveData(){
+    localStorage.setItem(APP_KEY,JSON.stringify({...data,customExerciseLibrary}));
+}
 
 function init(){loadData();populateWorkoutSelect();renderWorkoutList();selectWorkout()}
 function populateWorkoutSelect(){
@@ -265,8 +282,31 @@ function openExercisePicker(exercise=null){
     exerciseBeingChanged=exercise;document.getElementById("exerciseModal").classList.remove("hidden");document.getElementById("exerciseSearch").value="";renderExerciseChoices();
 }
 function renderExerciseChoices(){
-    const box=document.getElementById("exerciseChoices"),search=document.getElementById("exerciseSearch").value.toLowerCase().trim();box.innerHTML="";
-    EXERCISE_LIBRARY.filter(x=>!search||x.toLowerCase().includes(search)).forEach(ex=>{const b=document.createElement("button");b.className="exercise-choice";b.textContent=ex;b.onclick=()=>chooseExercise(ex);box.appendChild(b)});
+    const box=document.getElementById("exerciseChoices");
+    const search=document.getElementById("exerciseSearch").value.toLowerCase().trim();
+    box.innerHTML="";
+    const library=[...new Set([...DEFAULT_EXERCISE_LIBRARY,...customExerciseLibrary])];
+    library.filter(x=>!search||x.toLowerCase().includes(search)).forEach(ex=>{
+        const b=document.createElement("button");
+        b.className="exercise-choice";
+        b.textContent=customExerciseLibrary.includes(ex)?ex+"  • CUSTOM":ex;
+        b.onclick=()=>chooseExercise(ex);
+        box.appendChild(b);
+    });
+}
+function addCustomExerciseOnFly(){
+    const input=document.getElementById("customExerciseName");
+    const name=input.value.trim();
+    if(!name){showToast("Enter an exercise name");return}
+    const all=[...DEFAULT_EXERCISE_LIBRARY,...customExerciseLibrary];
+    const exists=all.some(x=>x.toLowerCase()===name.toLowerCase());
+    if(!exists){
+        customExerciseLibrary.push(name);
+        saveData();
+    }
+    input.value="";
+    chooseExercise(name);
+    showToast("Custom exercise added");
 }
 function filterExercises(){renderExerciseChoices()}
 function chooseExercise(exercise){
@@ -281,13 +321,13 @@ function closeModal(e){if(e.target.id==="exerciseModal")closeExercisePicker()}
 
 function formatDate(timestamp){
     const d=parseStoredDate(timestamp);
-    if(d===null)return "Date unavailable";
+    if(d===null)return "Original date unavailable";
     return new Date(d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"});
 }
 function renderLog(){
     const container=document.getElementById("logContainer");container.innerHTML="";
     if(!data.sessions.length){container.innerHTML=`<div class="empty"><div class="empty-icon">◎</div><div class="empty-title">No training sessions yet</div><div>Complete your first workout and it will appear here.</div></div>`;return}
-    [...data.sessions].sort((a,b)=>(parseStoredDate(b.date)||0)-(parseStoredDate(a.date)||0)).forEach(session=>{
+    [...data.sessions].sort((a,b)=>{const da=parseStoredDate(a.date),db=parseStoredDate(b.date);if(da===null&&db===null)return 0;if(da===null)return 1;if(db===null)return -1;return db-da}).forEach(session=>{
         const card=document.createElement("div");card.className="log-session";const grouped={};
         (session.sets||[]).forEach(set=>{if(!grouped[set.exercise])grouped[set.exercise]=[];grouped[set.exercise].push(set)});
         let html=`<div class="log-header"><div class="log-date">${formatDate(session.date)}</div><div class="log-workout">${escapeHTML(session.workout||"Workout")}</div></div>`;
@@ -313,7 +353,7 @@ function renderWorkoutList(){
 function deleteCustomWorkout(id){if(!confirm("Delete this custom workout?"))return;data.customWorkouts=data.customWorkouts.filter(w=>w.id!==id);saveData();populateWorkoutSelect();renderWorkoutList();selectWorkout()}
 
 function exportBackup(){
-    const backup={app:"Training Log",version:4,exported:new Date().toISOString(),data};
+    const backup={app:"Training Log",version:5,exported:new Date().toISOString(),data:{...data,customExerciseLibrary}};
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
     a.href=url;a.download="training-log-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast("Backup exported");
 }
@@ -326,6 +366,15 @@ function importBackup(event){
             const existing=new Set(data.sessions.map(sessionSignature));
             backup.data.sessions.forEach(s=>{const sig=sessionSignature(s);if(!existing.has(sig)){data.sessions.push(s);existing.add(sig)}});
             if(Array.isArray(backup.data.customWorkouts)){const ids=new Set(data.customWorkouts.map(w=>w.id));backup.data.customWorkouts.forEach(w=>{if(!ids.has(w.id))data.customWorkouts.push(w)})}
+            if(Array.isArray(backup.data.customExerciseLibrary)){
+                const names=new Set(customExerciseLibrary.map(x=>x.toLowerCase()));
+                backup.data.customExerciseLibrary.forEach(name=>{
+                    if(typeof name==="string"&&!names.has(name.toLowerCase())){
+                        customExerciseLibrary.push(name);
+                        names.add(name.toLowerCase());
+                    }
+                });
+            }
             saveData();populateWorkoutSelect();renderLog();renderWorkoutList();showToast("Backup restored");
         }catch{alert("That backup could not be restored.")}
     };
