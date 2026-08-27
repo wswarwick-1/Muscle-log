@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Performance Training Log V7 — AI Coach</title>
+<style>
+:root{--bg:#101112;--surface:#181a1c;--surface2:#202225;--yellow:#f4c542;--white:#f5f5f5;--muted:#8f9398;--border:#303236;--green:#7ee2a8;--red:#ff8c8c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:700px;margin:auto;padding-bottom:35px}
+.header{padding:24px 20px 12px}.brand{font-size:11px;letter-spacing:2.8px;color:var(--yellow);font-weight:900}.title{font-size:30px;font-weight:850;margin-top:5px}.subtitle{color:var(--muted);font-size:14px;margin-top:6px}
+.nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 16px 18px;padding:5px;background:var(--surface);border:1px solid var(--border);border-radius:15px}.nav button{border:0;background:transparent;color:var(--muted);padding:11px 3px;border-radius:11px;font-size:12px;font-weight:800}.nav button.active{background:var(--yellow);color:#111}
+.page{padding:0 16px}.hidden{display:none!important}.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.7px;color:var(--muted);font-weight:900;margin:20px 3px 9px}
+.select-wrap{position:relative}select{width:100%;appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--white);border-radius:14px;padding:16px 45px 16px 16px;outline:none}.select-wrap:after{content:"⌄";position:absolute;right:17px;top:13px;color:var(--yellow);font-size:20px;pointer-events:none}
+.workout-header{background:linear-gradient(145deg,#222528,#17191b);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:15px}.workout-name{font-size:22px;font-weight:850}.workout-description{color:var(--muted);font-size:13px;margin-top:5px}
+.exercise-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:17px;margin-bottom:14px;box-shadow:0 8px 25px rgba(0,0,0,.16)}.exercise-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.exercise-name{font-size:18px;font-weight:850}.change-btn{padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--yellow);font-size:10px;font-weight:900}.prescription{color:var(--yellow);font-size:11px;font-weight:850;margin-top:5px}.progress-note{color:var(--muted);font-size:11px;margin-top:4px;line-height:1.4}.previous{margin-top:6px;color:var(--muted);font-size:12px}.previous strong{color:var(--yellow)}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.input-label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-bottom:5px}.input{width:100%;background:#101112;border:1px solid var(--border);color:var(--white);padding:14px;border-radius:11px;outline:none;text-align:center;font-size:16px}.input:focus{border-color:var(--yellow)}
+.primary{width:100%;border:0;background:var(--yellow);color:#111;padding:14px;border-radius:11px;margin-top:10px;font-weight:900;font-size:13px}.secondary{width:100%;border:1px solid var(--border);background:var(--surface2);color:var(--white);padding:13px;border-radius:11px;margin-top:9px;font-weight:750}
+.sets{margin-top:14px}.set-row{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--border)}.set-number{color:var(--muted);font-size:12px}.set-value{font-size:14px;font-weight:750}.repeat{border:0;background:transparent;color:var(--yellow);font-size:10px;font-weight:900}.pr{display:inline-block;background:var(--yellow);color:#111;padding:3px 7px;border-radius:6px;font-size:9px;font-weight:900;margin-left:5px}
+.add-exercise{border:1px dashed #56585c;background:transparent;color:var(--yellow);width:100%;padding:14px;border-radius:14px;font-weight:850;margin-bottom:15px}
+.log-session{background:var(--surface);border:1px solid var(--border);border-radius:18px;margin-bottom:15px;overflow:hidden}.log-header{padding:15px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}.log-date{color:var(--yellow);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px}.log-workout{font-size:18px;font-weight:850;margin-top:4px}.log-exercise{padding:14px 16px;border-bottom:1px solid var(--border)}.log-exercise:last-child{border-bottom:0}.log-exercise-name{font-weight:850;margin-bottom:7px}.log-set{color:#d5d6d7;font-size:13px;padding:3px 0}
+.empty{text-align:center;padding:45px 20px;color:var(--muted)}.empty-icon{font-size:32px;margin-bottom:10px}.empty-title{color:var(--white);font-weight:850;margin-bottom:5px}
+.custom-card,.coach-card{background:var(--surface);border:1px solid var(--border);border-radius:17px;padding:16px;margin-bottom:12px}.text-input{width:100%;background:#101112;color:white;border:1px solid var(--border);border-radius:11px;padding:14px;outline:none}.custom-exercise-row{display:flex;gap:8px;margin-top:9px}.custom-exercise-row .text-input{flex:1}.remove{width:44px;border:1px solid #4a2929;background:#211516;color:#ff8c8c;border-radius:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;display:flex;align-items:flex-end;justify-content:center}.modal-box{width:100%;max-width:700px;max-height:85vh;overflow:auto;background:#191b1d;border:1px solid var(--border);border-radius:22px 22px 0 0;padding:20px}.modal-title{font-size:20px;font-weight:850;margin-bottom:15px}.exercise-choice{width:100%;text-align:left;background:var(--surface2);color:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:7px}
+.backup-card{background:var(--surface);border:1px solid var(--border);border-radius:17px;padding:16px;margin-top:15px}.small{color:var(--muted);font-size:12px;line-height:1.5}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--yellow);color:#111;padding:11px 16px;border-radius:10px;font-weight:850;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.coach-hero{background:linear-gradient(145deg,#292a21,#17191b);border:1px solid #4a462b;border-radius:20px;padding:19px;margin-bottom:14px}.coach-title{font-size:22px;font-weight:900}.coach-sub{color:var(--muted);font-size:13px;margin-top:5px}.coach-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:13px}.metric-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:900}.metric-value{font-size:20px;font-weight:900;margin-top:5px}.metric-note{font-size:10px;color:var(--muted);margin-top:3px}.coach-pill{display:inline-block;padding:5px 8px;border-radius:8px;background:#2b2c2f;color:var(--yellow);font-size:10px;font-weight:900;margin:4px 4px 0 0}.analysis{color:#ddd;font-size:13px;line-height:1.55}.analysis strong{color:var(--yellow)}.chat{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}.chat-messages{padding:14px;min-height:180px;max-height:420px;overflow:auto}.bubble{max-width:90%;padding:11px 13px;border-radius:14px;margin-bottom:9px;font-size:13px;line-height:1.5;white-space:pre-wrap}.bubble.coach{background:var(--surface2);border:1px solid var(--border);margin-right:auto}.bubble.user{background:var(--yellow);color:#111;margin-left:auto}.chat-input{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px;border-top:1px solid var(--border)}.chat-input textarea{resize:none;min-height:48px;max-height:120px;background:#101112;border:1px solid var(--border);color:#fff;border-radius:11px;padding:12px;outline:none}.chat-send{width:70px;border:0;background:var(--yellow);color:#111;border-radius:11px;font-weight:900}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="header"><div class="brand">PERFORMANCE</div><div class="title">Training Log</div><div class="subtitle">Track. Progress. Get stronger.</div></header>
+<nav class="nav">
+<button id="navWorkout" class="active" onclick="showPage('workout')">Workout</button>
+<button id="navLog" onclick="showPage('log')">Training Log</button>
+<button id="navCoach" onclick="showPage('coach')">🤖 Coach</button>
+<button id="navManage" onclick="showPage('manage')">Manage</button>
+</nav>
+
+<main id="pageWorkout" class="page">
+<div class="section-title">Programme</div>
+<div class="select-wrap"><select id="workoutSelect" onchange="selectWorkout()"></select></div>
+<div id="workoutHeader"></div><div id="exerciseContainer"></div>
+<button class="add-exercise" onclick="openExercisePicker()">+ Add / Change Exercise</button>
+<button class="primary" onclick="finishWorkout()">FINISH WORKOUT</button>
+</main>
+
+<main id="pageLog" class="page hidden">
+<div class="section-title">Training History</div><div class="small" style="margin:0 3px 12px;">Historical dates are read from the original saved session data. Dates are never guessed.</div><div id="logContainer"></div>
+<div class="backup-card"><div style="font-weight:850;margin-bottom:5px;">Data Protection</div>
+<div class="small">Keep a backup of your training history so it can be restored if the app is reinstalled.</div>
+<button class="secondary" onclick="exportBackup()">Export Training Backup</button>
+<label class="secondary" style="display:block;text-align:center;cursor:pointer;">Import Training Backup
+<input id="importFile" type="file" accept=".json" style="display:none" onchange="importBackup(event)"></label></div>
+</main>
+
+<main id="pageCoach" class="page hidden">
+<div class="coach-hero">
+  <div class="coach-title">🤖 AI Coach</div>
+  <div class="coach-sub">Your training log, analysed like a coach.</div>
+  <div id="coachPills"></div>
+</div>
+<div class="coach-grid" id="coachMetrics"></div>
+<div class="section-title">Coach's Take</div>
+<div class="coach-card analysis" id="coachAnalysis"></div>
+<div class="section-title">Next Session</div>
+<div class="coach-card" id="coachPlan"></div>
+<div class="section-title">Ask Coach</div>
+<div class="chat">
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input">
+    <textarea id="coachInput" placeholder="e.g. What should I improve?"></textarea>
+    <button class="chat-send" onclick="askCoach()">SEND</button>
+  </div>
+</div>
+<div class="coach-card">
+  <div style="font-weight:850">Coach Settings</div>
+  <div class="small" style="margin-top:5px">The built-in coach works offline. If you later add a secure AI endpoint, paste it below. Never put a private API key into this app.</div>
+  <input id="coachEndpoint" class="text-input" style="margin-top:10px" placeholder="Optional secure AI endpoint">
+  <button class="secondary" onclick="saveCoachSettings()">SAVE COACH SETTINGS</button>
+</div>
+</main>
+
+<main id="pageManage" class="page hidden">
+<div class="section-title">Your Programmes</div><div id="workoutList"></div>
+<div class="section-title">Create Custom Workout</div>
+<div class="custom-card">
+<input id="customWorkoutName" class="text-input" placeholder="Workout name">
+<div id="customExerciseInputs"></div>
+<button class="secondary" onclick="addCustomExerciseInput()">+ Add Exercise</button>
+<button class="primary" onclick="saveCustomWorkout()">SAVE CUSTOM WORKOUT</button>
+</div>
+</main>
+</div>
+
+<div id="exerciseModal" class="modal hidden" onclick="closeModal(event)">
+<div class="modal-box" onclick="event.stopPropagation()"><div class="modal-title">Choose Exercise</div>
+<input id="exerciseSearch" class="text-input" placeholder="Search exercises..." oninput="filterExercises()">
+<div style="display:flex;gap:8px;margin-top:10px;">
+<input id="customExerciseName" class="text-input" placeholder="Add your own exercise">
+<button class="change-btn" style="padding:0 14px;white-space:nowrap;" onclick="addCustomExerciseOnFly()">ADD</button>
+</div>
+<div class="small" style="margin-top:7px;">Add any exercise instantly. It will be saved to your exercise library.</div>
+<div id="exerciseChoices" style="margin-top:12px;"></div>
+<button class="secondary" onclick="closeExercisePicker()">Cancel</button></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const PROGRAMMES={
+"Upper A — Chest Focus":{description:"Chest-priority upper body hypertrophy.",exercises:[
+{name:"Barbell Bench Press",sets:3,min:5,max:8},{name:"Incline Dumbbell Press",sets:3,min:8,max:12},{name:"Chest-Supported Row",sets:3,min:8,max:12},{name:"Seated Shoulder Press",sets:2,min:8,max:12},{name:"Cable Lateral Raise",sets:3,min:12,max:20},{name:"Triceps Pressdown",sets:2,min:10,max:15},{name:"Dumbbell Curl",sets:2,min:10,max:15}]},
+"Lower A — Quad Focus":{description:"Quad-priority lower body hypertrophy.",exercises:[
+{name:"Back Squat",sets:3,min:5,max:8},{name:"Leg Press",sets:3,min:8,max:12},{name:"Bulgarian Split Squat",sets:2,min:8,max:12},{name:"Leg Extension",sets:3,min:10,max:15},{name:"Romanian Deadlift",sets:2,min:8,max:12},{name:"Seated Leg Curl",sets:2,min:10,max:15},{name:"Standing Calf Raise",sets:3,min:8,max:15}]},
+"Upper B — Arms Focus":{description:"Arm-priority upper body hypertrophy.",exercises:[
+{name:"Close-Grip Bench Press",sets:3,min:6,max:10},{name:"EZ-Bar Curl",sets:3,min:6,max:10},{name:"Incline Dumbbell Curl",sets:2,min:10,max:15},{name:"Overhead Cable Triceps Extension",sets:3,min:10,max:15},{name:"Hammer Curl",sets:2,min:8,max:12},{name:"Cable Triceps Pressdown",sets:2,min:10,max:15},{name:"Cable Lateral Raise",sets:3,min:12,max:20},{name:"Chest-Supported Row",sets:3,min:8,max:12}]},
+"Lower B — Posterior + Calf Focus":{description:"Posterior-chain and calf hypertrophy.",exercises:[
+{name:"Romanian Deadlift",sets:3,min:6,max:10},{name:"Hack Squat",sets:3,min:8,max:12},{name:"Lying Leg Curl",sets:3,min:8,max:12},{name:"Leg Extension",sets:2,min:10,max:15},{name:"Standing Calf Raise",sets:4,min:8,max:12},{name:"Seated Calf Raise",sets:4,min:10,max:20},{name:"Single-Leg Calf Raise",sets:2,min:12,max:20}]}
+};
+const DEFAULT_EXERCISE_LIBRARY=["Back Squat","Front Squat","Hack Squat","Leg Press","Leg Extension","Bulgarian Split Squat","Romanian Deadlift","Conventional Deadlift","Lying Leg Curl","Seated Leg Curl","Standing Calf Raise","Seated Calf Raise","Single-Leg Calf Raise","Barbell Bench Press","Close-Grip Bench Press","Incline Barbell Press","Incline Dumbbell Press","Dumbbell Bench Press","Chest-Supported Row","Barbell Row","Cable Row","Lat Pulldown","Pull-Up","Seated Shoulder Press","Dumbbell Shoulder Press","Cable Lateral Raise","Dumbbell Lateral Raise","Face Pull","EZ-Bar Curl","Dumbbell Curl","Incline Dumbbell Curl","Hammer Curl","Cable Curl","Triceps Pressdown","Cable Triceps Pressdown","Overhead Cable Triceps Extension","Skull Crusher"];
+let customExerciseLibrary=[];
+const APP_KEY="training_log_v6";
+const OLD_KEYS=["training_log_v5","training_log_v3","training_log_v2","training_sessions","sessions","workoutSessions","trainingSessions","logSessions","trainingLog","workoutLog","workoutHistory","trainingHistory","log"];
+let data={sessions:[],customWorkouts:[]},currentWorkout=null,currentExercises=[],currentSets={},exerciseBeingChanged=null;
+let coachSettings={endpoint:""};
+
+function parse(v){if(!v)return null;try{return JSON.parse(v)}catch{return null}}
+function escapeHTML(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function escapeJS(v){return String(v).replace(/\\/g,"\\\\").replace(/'/g,"\\'")}
+function parseStoredDate(value){
+if(value===null||value===undefined||value==="")return null;
+if(typeof value==="number"){if(!Number.isFinite(value)||value<=0)return null;return value<100000000000?value*1000:value}
+if(typeof value==="string"){const s=value.trim();if(!s)return null;if(/^\d+$/.test(s)){const n=Number(s);return n<100000000000?n*1000:n}const t=Date.parse(s);return Number.isNaN(t)?null:t}return null}
+function extractDate(obj,fallback=null){if(!obj)return fallback;for(const key of["date","timestamp","createdAt","created_at","startDate","startedAt","completedAt","sessionDate"]){const d=parseStoredDate(obj[key]);if(d!==null)return d}return fallback}
+function normaliseSet(s,sessionDate=null){if(!s)return null;const exercise=s.exercise||s.exerciseName||s.name,weight=Number(s.weight??s.kg??s.load??0),reps=Number(s.reps??s.rep??0);if(!exercise||!weight||!reps)return null;return{exercise:String(exercise),weight,reps,timestamp:extractDate(s,sessionDate),pr:!!s.pr}}
+function sessionSignature(s){return JSON.stringify({workout:s.workout,date:s.date,sets:s.sets})}
+function contentSig(s){return JSON.stringify({workout:s.workout||"",sets:(s.sets||[]).map(x=>({exercise:x.exercise||"",weight:Number(x.weight)||0,reps:Number(x.reps)||0}))})}
+function recoverSessions(){
+const recovered=[];
+OLD_KEYS.forEach(key=>{const parsed=parse(localStorage.getItem(key));if(!parsed)return;let possible=Array.isArray(parsed)?parsed:(Array.isArray(parsed.sessions)?parsed.sessions:(Array.isArray(parsed.history)?parsed.history:[]));
+possible.forEach(item=>{const sessionDate=extractDate(item,null);if(item.exercise||item.exerciseName){const set=normaliseSet(item,sessionDate);if(set)recovered.push({id:"recovered-"+Math.random(),workout:item.workout||item.workoutName||"Recovered Workout",date:set.timestamp,sets:[set],recovered:true});return}
+if(Array.isArray(item.sets)){const sets=item.sets.map(s=>normaliseSet(s,sessionDate)).filter(s=>s&&s.weight&&s.reps);if(sets.length){const date=sessionDate!==null?sessionDate:sets.find(s=>s.timestamp!==null)?.timestamp||null;recovered.push({id:item.id||"recovered-"+Math.random(),workout:item.workout||item.workoutName||"Recovered Workout",date,sets})}}})});
+return recovered}
+function loadData(){
+  const current=parse(localStorage.getItem(APP_KEY));
+  const legacyV6=parse(localStorage.getItem("training_log_v6"));
+  let imported=0;
+
+  // Prefer V7 data, but merge any V6 data that is not already present.
+  if(current){
+    data.sessions=Array.isArray(current.sessions)?current.sessions:[];
+    data.customWorkouts=Array.isArray(current.customWorkouts)?current.customWorkouts:[];
+    customExerciseLibrary=Array.isArray(current.customExerciseLibrary)?current.customExerciseLibrary:[];
+  }
+
+  if(legacyV6){
+    const v6Sessions=Array.isArray(legacyV6.sessions)?legacyV6.sessions:[];
+    const existing=new Set(data.sessions.map(sessionSignature));
+    v6Sessions.forEach(s=>{
+      const sig=sessionSignature(s);
+      if(!existing.has(sig)){
+        data.sessions.push(s);
+        existing.add(sig);
+        imported++;
+      }
+    });
+
+    const v6Workouts=Array.isArray(legacyV6.customWorkouts)?legacyV6.customWorkouts:[];
+    const workoutIds=new Set(data.customWorkouts.map(w=>w.id));
+    v6Workouts.forEach(w=>{
+      if(w && w.id && !workoutIds.has(w.id)){
+        data.customWorkouts.push(w);
+        workoutIds.add(w.id);
+      }
+    });
+
+    const names=new Set(customExerciseLibrary.map(x=>String(x).toLowerCase()));
+    const v6Exercises=Array.isArray(legacyV6.customExerciseLibrary)?legacyV6.customExerciseLibrary:[];
+    v6Exercises.forEach(name=>{
+      if(typeof name==="string"&&!names.has(name.toLowerCase())){
+        customExerciseLibrary.push(name);
+        names.add(name.toLowerCase());
+      }
+    });
+  }
+
+  // Also recover sessions from older versions/keys as a safety net.
+  const recovered=recoverSessions(),recoveredMap=new Map(recovered.map(s=>[contentSig(s),s]));
+  data.sessions=data.sessions.map(s=>{
+    const r=recoveredMap.get(contentSig(s));
+    return(r&&r.date!==null&&r.date!==undefined)?{...s,date:r.date,sets:r.sets}:s;
+  });
+  const existing=new Set(data.sessions.map(sessionSignature));
+  recovered.forEach(s=>{
+    const sig=sessionSignature(s);
+    if(!existing.has(sig)){data.sessions.push(s);existing.add(sig);}
+  });
+
+  const savedCoach=parse(localStorage.getItem("training_log_coach_settings"));
+  if(savedCoach)coachSettings={...coachSettings,...savedCoach};
+
+  saveData();
+
+  if(imported>0){
+    setTimeout(()=>showToast(`Imported ${imported} training session${imported===1?"":"s"} from V6`),500);
+  }
+}
+function saveData(){localStorage.setItem(APP_KEY,JSON.stringify({...data,customExerciseLibrary}))}
+function init(){loadData();populateWorkoutSelect();renderWorkoutList();selectWorkout();renderCoach();document.getElementById("coachEndpoint").value=coachSettings.endpoint||""}
+function populateWorkoutSelect(){const select=document.getElementById("workoutSelect");select.innerHTML="";Object.keys(PROGRAMMES).forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;select.appendChild(o)});data.customWorkouts.forEach(w=>{const o=document.createElement("option");o.value="custom:"+w.id;o.textContent=w.name;select.appendChild(o)})}
+function showPage(page){
+["pageWorkout","pageLog","pageCoach","pageManage"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+["navWorkout","navLog","navCoach","navManage"].forEach(id=>document.getElementById(id).classList.remove("active"));
+document.getElementById("page"+page.charAt(0).toUpperCase()+page.slice(1)).classList.remove("hidden");
+document.getElementById("nav"+page.charAt(0).toUpperCase()+page.slice(1)).classList.add("active");
+if(page==="log")renderLog();if(page==="manage")renderWorkoutList();if(page==="coach")renderCoach()}
+function selectWorkout(){
+const value=document.getElementById("workoutSelect").value;
+if(value.startsWith("custom:")){const id=value.slice(7);currentWorkout=data.customWorkouts.find(w=>w.id===id);currentExercises=currentWorkout?[...currentWorkout.exercises]:[]}
+else{currentWorkout={name:value,description:PROGRAMMES[value].description};currentExercises=PROGRAMMES[value].exercises.map(e=>({...e}))}
+currentSets={};currentExercises.forEach(ex=>{const n=typeof ex==="string"?ex:ex.name;currentSets[n]=[]});renderWorkout()}
+function renderWorkout(){document.getElementById("workoutHeader").innerHTML=`<div class="workout-header"><div class="workout-name">${escapeHTML(currentWorkout?.name||"")}</div><div class="workout-description">${escapeHTML(currentWorkout?.description||"")}</div></div>`;const c=document.getElementById("exerciseContainer");c.innerHTML="";currentExercises.forEach(renderExerciseCard)}
+function getPreviousBest(exercise){let best=null;data.sessions.forEach(session=>(session.sets||[]).forEach(set=>{if(set.exercise===exercise&&Number(set.weight)>0){if(!best||Number(set.weight)>best.weight||(Number(set.weight)===best.weight&&Number(set.reps)>best.reps))best={weight:Number(set.weight),reps:Number(set.reps)}}}));return best}
+function renderExerciseCard(exercise){
+const isProgram=typeof exercise==="object",name=isProgram?exercise.name:exercise,target=isProgram?`${exercise.sets} sets × ${exercise.min}–${exercise.max} reps`:"Custom exercise",previous=getPreviousBest(name),previousHTML=previous?`Previous best • <strong>${previous.weight}kg × ${previous.reps}</strong>`:"No previous record";
+const card=document.createElement("div");card.className="exercise-card";card.innerHTML=`<div class="exercise-top"><div><div class="exercise-name">${escapeHTML(name)}</div><div class="prescription">${target}</div><div class="progress-note">${previous?`Aim to beat ${previous.weight}kg × ${previous.reps} while staying in the target range.`:"Choose a weight that leaves roughly 1–3 reps in reserve."}</div><div class="previous">${previousHTML}</div></div><button class="change-btn" onclick="openExercisePicker('${escapeJS(name)}')">CHANGE</button></div><div class="input-row"><div><span class="input-label">Weight KG</span><input class="input weight-input" inputmode="decimal" placeholder="0"></div><div><span class="input-label">Reps</span><input class="input reps-input" inputmode="numeric" placeholder="0"></div></div><button class="primary" onclick="addSet(this,'${escapeJS(name)}')">ADD SET</button><div class="sets"></div>`;
+document.getElementById("exerciseContainer").appendChild(card);renderSets(card,name)}
+function isPR(exercise,weight,reps){const p=getPreviousBest(exercise);return !p||weight>p.weight||(weight===p.weight&&reps>p.reps)}
+function addSet(button,exercise){const card=button.closest(".exercise-card"),weight=Number(card.querySelector(".weight-input").value),reps=Number(card.querySelector(".reps-input").value);if(!weight||!reps){showToast("Enter weight and reps");return}if(!currentSets[exercise])currentSets[exercise]=[];currentSets[exercise].push({exercise,weight,reps,timestamp:Date.now(),pr:isPR(exercise,weight,reps)});renderSets(card,exercise);card.querySelector(".weight-input").value="";card.querySelector(".reps-input").value="";if(currentSets[exercise].at(-1).pr)showToast("New PR!")}
+function renderSets(card,exercise){const box=card.querySelector(".sets");box.innerHTML="";(currentSets[exercise]||[]).forEach((set,i)=>{const row=document.createElement("div");row.className="set-row";row.innerHTML=`<div class="set-number">${i+1}</div><div class="set-value">${set.weight}kg × ${set.reps}${set.pr?'<span class="pr">PR</span>':""}</div><button class="repeat" onclick="repeatSet('${escapeJS(exercise)}',${set.weight},${set.reps})">REPEAT</button>`;box.appendChild(row)})}
+function repeatSet(exercise,weight,reps){document.querySelectorAll(".exercise-card").forEach(card=>{const title=card.querySelector(".exercise-name");if(title&&title.textContent.trim()===exercise){card.querySelector(".weight-input").value=weight;card.querySelector(".reps-input").value=reps;card.querySelector(".weight-input").focus()}})}
+function finishWorkout(){const sets=Object.values(currentSets).flat();if(!sets.length){showToast("Add at least one set");return}data.sessions.unshift({id:"session-"+Date.now(),workout:currentWorkout.name,date:Date.now(),sets:sets.map(s=>({...s}))});saveData();currentSets={};currentExercises.forEach(ex=>{const n=typeof ex==="string"?ex:ex.name;currentSets[n]=[]});renderWorkout();renderCoach();showToast("Workout saved")}
+function openExercisePicker(exercise=null){exerciseBeingChanged=exercise;document.getElementById("exerciseModal").classList.remove("hidden");document.getElementById("exerciseSearch").value="";renderExerciseChoices()}
+function renderExerciseChoices(){const box=document.getElementById("exerciseChoices"),search=document.getElementById("exerciseSearch").value.toLowerCase().trim();box.innerHTML="";[...new Set([...DEFAULT_EXERCISE_LIBRARY,...customExerciseLibrary])].filter(x=>!search||x.toLowerCase().includes(search)).forEach(ex=>{const b=document.createElement("button");b.className="exercise-choice";b.textContent=customExerciseLibrary.includes(ex)?ex+"  • CUSTOM":ex;b.onclick=()=>chooseExercise(ex);box.appendChild(b)})}
+function addCustomExerciseOnFly(){const input=document.getElementById("customExerciseName"),name=input.value.trim();if(!name){showToast("Enter an exercise name");return}const all=[...DEFAULT_EXERCISE_LIBRARY,...customExerciseLibrary];if(!all.some(x=>x.toLowerCase()===name.toLowerCase())){customExerciseLibrary.push(name);saveData()}input.value="";chooseExercise(name);showToast("Custom exercise added")}
+function filterExercises(){renderExerciseChoices()}
+function chooseExercise(exercise){if(exerciseBeingChanged){const old=exerciseBeingChanged,index=currentExercises.findIndex(ex=>(typeof ex==="string"?ex:ex.name)===old);if(index!==-1){currentExercises[index]={name:exercise,sets:3,min:8,max:12};currentSets[exercise]=currentSets[old]||[];delete currentSets[old]}}else if(!currentExercises.some(ex=>(typeof ex==="string"?ex:ex.name)===exercise)){currentExercises.push({name:exercise,sets:3,min:8,max:12});currentSets[exercise]=[]}closeExercisePicker();renderWorkout()}
+function closeExercisePicker(){document.getElementById("exerciseModal").classList.add("hidden");exerciseBeingChanged=null}
+function closeModal(e){if(e.target.id==="exerciseModal")closeExercisePicker()}
+function formatDate(timestamp){const d=parseStoredDate(timestamp);if(d===null)return"Original date unavailable";return new Date(d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
+function renderLog(){const container=document.getElementById("logContainer");container.innerHTML="";if(!data.sessions.length){container.innerHTML=`<div class="empty"><div class="empty-icon">◎</div><div class="empty-title">No training sessions yet</div><div>Complete your first workout and it will appear here.</div></div>`;return}[...data.sessions].sort((a,b)=>{const da=parseStoredDate(a.date),db=parseStoredDate(b.date);if(da===null&&db===null)return 0;if(da===null)return 1;if(db===null)return-1;return db-da}).forEach(session=>{const card=document.createElement("div");card.className="log-session";const grouped={};(session.sets||[]).forEach(set=>{if(!grouped[set.exercise])grouped[set.exercise]=[];grouped[set.exercise].push(set)});let html=`<div class="log-header"><div class="log-date">${formatDate(session.date)}</div><div class="log-workout">${escapeHTML(session.workout||"Workout")}</div></div>`;Object.keys(grouped).forEach(ex=>{html+=`<div class="log-exercise"><div class="log-exercise-name">${escapeHTML(ex)}</div>`;grouped[ex].forEach(set=>{html+=`<div class="log-set">${set.weight}kg × ${set.reps}${set.pr?'<span class="pr">PR</span>':""}</div>`});html+="</div>"});card.innerHTML=html;container.appendChild(card)})}
+function addCustomExerciseInput(){const row=document.createElement("div");row.className="custom-exercise-row";row.innerHTML=`<input class="text-input" placeholder="Exercise"><button class="remove" onclick="this.parentElement.remove()">×</button>`;document.getElementById("customExerciseInputs").appendChild(row)}
+function saveCustomWorkout(){const name=document.getElementById("customWorkoutName").value.trim(),inputs=document.querySelectorAll("#customExerciseInputs .text-input"),exercises=[...inputs].map(i=>i.value.trim()).filter(Boolean);if(!name){showToast("Enter a workout name");return}if(!exercises.length){showToast("Add at least one exercise");return}data.customWorkouts.push({id:"custom-"+Date.now(),name,description:"Custom workout",exercises});saveData();document.getElementById("customWorkoutName").value="";document.getElementById("customExerciseInputs").innerHTML="";populateWorkoutSelect();renderWorkoutList();showToast("Custom workout saved")}
+function renderWorkoutList(){const c=document.getElementById("workoutList");c.innerHTML="";Object.keys(PROGRAMMES).forEach(name=>{const p=PROGRAMMES[name],card=document.createElement("div");card.className="custom-card";card.innerHTML=`<div style="font-size:17px;font-weight:850">${escapeHTML(name)}</div><div class="small" style="margin-top:5px">${p.exercises.length} exercises</div><div class="small" style="margin-top:7px">${p.exercises.map(e=>escapeHTML(e.name)).join(" • ")}</div>`;c.appendChild(card)});data.customWorkouts.forEach(w=>{const card=document.createElement("div");card.className="custom-card";card.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><div style="font-size:17px;font-weight:850">${escapeHTML(w.name)}</div><div class="small" style="margin-top:4px">Custom • ${w.exercises.length} exercises</div></div><button class="change-btn" onclick="deleteCustomWorkout('${escapeJS(w.id)}')">DELETE</button></div>`;c.appendChild(card)})}
+function deleteCustomWorkout(id){if(!confirm("Delete this custom workout?"))return;data.customWorkouts=data.customWorkouts.filter(w=>w.id!==id);saveData();populateWorkoutSelect();renderWorkoutList();selectWorkout()}
+function exportBackup(){const backup={app:"Training Log",version:7,exported:new Date().toISOString(),data:{...data,customExerciseLibrary}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="training-log-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast("Backup exported")}
+function importBackup(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(){try{const backup=JSON.parse(reader.result);if(!backup.data||!Array.isArray(backup.data.sessions))throw new Error();const existing=new Set(data.sessions.map(sessionSignature));backup.data.sessions.forEach(s=>{const sig=sessionSignature(s);if(!existing.has(sig)){data.sessions.push(s);existing.add(sig)}});if(Array.isArray(backup.data.customWorkouts)){const ids=new Set(data.customWorkouts.map(w=>w.id));backup.data.customWorkouts.forEach(w=>{if(!ids.has(w.id))data.customWorkouts.push(w)})}if(Array.isArray(backup.data.customExerciseLibrary)){const names=new Set(customExerciseLibrary.map(x=>x.toLowerCase()));backup.data.customExerciseLibrary.forEach(name=>{if(typeof name==="string"&&!names.has(name.toLowerCase())){customExerciseLibrary.push(name);names.add(name.toLowerCase())}})}saveData();populateWorkoutSelect();renderLog();renderWorkoutList();renderCoach();showToast("Backup restored")}catch{alert("That backup could not be restored.")}};reader.readAsText(file)}
+
+function daysAgo(ms){return(Math.max(0,Date.now()-ms)/86400000)}
+function recentSessions(days=28){return data.sessions.filter(s=>{const d=parseStoredDate(s.date);return d!==null&&daysAgo(d)<=days})}
+function allSets(){return data.sessions.flatMap(s=>(s.sets||[]).map(x=>({...x,sessionDate:s.date,workout:s.workout})))}
+function uniqueExercises(){return[...new Set(allSets().map(s=>s.exercise).filter(Boolean))]}
+function sortedExerciseSets(name){return allSets().filter(s=>s.exercise===name&&Number(s.weight)>0&&Number(s.reps)>0).sort((a,b)=>(parseStoredDate(a.timestamp||a.sessionDate)||0)-(parseStoredDate(b.timestamp||b.sessionDate)||0))}
+function exerciseStats(name){
+  const sets=sortedExerciseSets(name); if(!sets.length)return null;
+  const best=sets.reduce((a,b)=>Number(b.weight)>Number(a.weight)||(Number(b.weight)===Number(a.weight)&&Number(b.reps)>Number(a.reps))?b:a);
+  const latestDate=Math.max(...sets.map(s=>parseStoredDate(s.sessionDate)||0));
+  const latestSets=sets.filter(s=>(parseStoredDate(s.sessionDate)||0)===latestDate);
+  return {sets,best,latestSets:latestSets.length?latestSets:sets.slice(-1),volume:sets.reduce((t,s)=>t+Number(s.weight)*Number(s.reps),0),sessions:new Set(sets.map(s=>parseStoredDate(s.sessionDate)||s.sessionDate)).size};
+}
+function estimate1RM(weight,reps){if(reps<=1)return weight;return weight*(1+reps/30)}
+function roundLoad(x){return Number.isFinite(x)&&x>0?Math.round(x/2.5)*2.5:0}
+function targetRangeForExercise(name){
+  const all=[...Object.values(PROGRAMMES).flatMap(p=>p.exercises),...data.customWorkouts.flatMap(w=>w.exercises||[])];
+  const found=all.find(e=>(typeof e==="string"?e:e.name)===name);
+  return found&&typeof found==="object"?{min:Number(found.min)||8,max:Number(found.max)||12,sets:Number(found.sets)||3}:{min:8,max:12,sets:3};
+}
+function progressionForExercise(name){
+  const st=exerciseStats(name);if(!st)return null;
+  const range=targetRangeForExercise(name),last=st.latestSets;
+  const avgReps=last.reduce((a,s)=>a+Number(s.reps),0)/last.length;
+  const avgWeight=last.reduce((a,s)=>a+Number(s.weight),0)/last.length;
+  let action="hold",load=roundLoad(avgWeight),reason=`Hold around ${load}kg and build reps toward ${range.max}.`;
+  if(avgReps>=range.max){action="increase";load=roundLoad(avgWeight+2.5);reason=`You reached the top of the ${range.min}–${range.max} range, so a small load increase is justified.`}
+  else if(avgReps>=range.min){action="add reps";reason=`Stay around ${load}kg and add reps before increasing load.`}
+  else reason=`Stay around ${load}kg and build into the ${range.min}–${range.max} range before adding weight.`;
+  return{name,range,last,avgReps,avgWeight,lastE1RM:Math.max(...last.map(s=>estimate1RM(Number(s.weight),Number(s.reps)))),bestE1RM:estimate1RM(st.best.weight,st.best.reps),action,load,reason};
+}
+function coachSummary(){
+  const sessions=recentSessions(28),recentSets=sessions.flatMap(s=>s.sets||[]),prs=recentSets.filter(s=>s.pr);
+  const days=[...new Set(sessions.map(s=>{const d=parseStoredDate(s.date);return d?new Date(d).toDateString():""}))].filter(Boolean);
+  const exerciseNames=uniqueExercises();
+  const top=exerciseNames.map(n=>{const st=exerciseStats(n);return st?{name:n,...st}:null}).filter(Boolean).sort((a,b)=>b.volume-a.volume).slice(0,5);
+  const strongest=exerciseNames.map(n=>{const st=exerciseStats(n);return st?{name:n,e1rm:estimate1RM(st.best.weight,st.best.reps),best:st.best}:null}).filter(Boolean).sort((a,b)=>b.e1rm-a.e1rm)[0];
+  return{sessions,recentSets,prs,days,top,strongest};
+}
+function nextWorkoutName(){
+  const names=[...Object.keys(PROGRAMMES),...data.customWorkouts.map(w=>w.name)];
+  if(!currentWorkout)return names[0]||null;
+  const i=names.indexOf(currentWorkout.name);
+  return i>=0?names[(i+1)%names.length]:currentWorkout.name;
+}
+function getPlanExercises(name){
+  if(PROGRAMMES[name])return PROGRAMMES[name].exercises;
+  const w=data.customWorkouts.find(x=>x.name===name);return w?(w.exercises||[]):[];
+}
+function buildExercisePlan(ex){
+  const name=typeof ex==="string"?ex:ex.name;
+  const range=typeof ex==="object"?{min:Number(ex.min)||8,max:Number(ex.max)||12,sets:Number(ex.sets)||3}:targetRangeForExercise(name);
+  const p=progressionForExercise(name);
+  return p?{name,sets:range.sets,min:range.min,max:range.max,load:p.load,reason:p.reason}:{name,sets:range.sets,min:range.min,max:range.max,load:null,reason:"No previous performance. Choose a load leaving roughly 1–3 reps in reserve."};
+}
+function renderCoachPlan(){
+  const box=document.getElementById("coachPlan");if(!box)return;
+  const name=nextWorkoutName(),plan=getPlanExercises(name);
+  if(!plan.length){box.innerHTML='<div class="small">Log a few sessions and I’ll build a personalised next-session prescription.</div>';return}
+  box.innerHTML=`<div style="font-weight:900;font-size:16px;margin-bottom:10px;">${escapeHTML(name||"Next workout")}</div>`+
+    plan.map(ex=>{const p=buildExercisePlan(ex);return `<div style="padding:10px 0;border-top:1px solid var(--border)"><div style="font-weight:850">${escapeHTML(p.name)}</div><div style="color:var(--yellow);font-size:12px;font-weight:850;margin-top:3px;">${p.load?`${p.load}kg`:"Choose load"} • ${p.sets} sets × ${p.min}–${p.max}</div><div class="small" style="margin-top:3px;">${escapeHTML(p.reason)}</div></div>`}).join("");
+}
+function renderCoach(){
+  const s=coachSummary(),total=s.recentSets.length,last=s.sessions[0];
+  document.getElementById("coachPills").innerHTML=`<span class="coach-pill">${s.sessions.length} sessions / 28d</span><span class="coach-pill">${total} sets / 28d</span><span class="coach-pill">${s.prs.length} PRs / 28d</span>`;
+  document.getElementById("coachMetrics").innerHTML=`<div class="metric"><div class="metric-label">Sessions</div><div class="metric-value">${s.sessions.length}</div><div class="metric-note">last 28 days</div></div><div class="metric"><div class="metric-label">Working sets</div><div class="metric-value">${total}</div><div class="metric-note">last 28 days</div></div><div class="metric"><div class="metric-label">Latest</div><div class="metric-value">${last?formatDate(last.date).split(",")[0]:"—"}</div><div class="metric-note">${last?escapeHTML(last.workout):"No session yet"}</div></div><div class="metric"><div class="metric-label">Top lift</div><div class="metric-value">${s.strongest?Math.round(s.strongest.e1rm)+"kg":"—"}</div><div class="metric-note">${s.strongest?escapeHTML(s.strongest.name):"Log some sets"}</div></div>`;
+  let text="";
+  if(!s.sessions.length)text="<strong>Ready when you are.</strong><br>Your V6 history will be imported automatically if it exists on this device.";
+  else{
+    text=`<strong>Training snapshot:</strong> ${s.sessions.length} session${s.sessions.length===1?"":"s"} and ${total} working sets in the last 28 days.<br><br>`;
+    text+=s.prs.length?`<strong>Progression:</strong> ${s.prs.length} recent PR${s.prs.length===1?"":"s"} flagged.<br><br>`:`<strong>Progression:</strong> no recent PRs flagged; rep progression and estimated 1RM still count.<br><br>`;
+    if(s.sessions.length>16)text+="<strong>Fatigue flag:</strong> training frequency is high. Watch performance and recovery before adding volume.<br><br>";
+    else text+=`<strong>Consistency:</strong> ${s.days.length} training day${s.days.length===1?"":"s"} logged recently.<br><br>`;
+    if(s.strongest)text+=`<strong>Standout:</strong> ${escapeHTML(s.strongest.name)} — ${s.strongest.best.weight}kg × ${s.strongest.best.reps}, estimated 1RM ~${Math.round(s.strongest.e1rm)}kg.`;
+  }
+  document.getElementById("coachAnalysis").innerHTML=text;renderCoachPlan();
+  if(!document.getElementById("chatMessages").children.length)addCoachMessage("coach","I'm ready. I’m using your training history to make progression and next-session decisions.");
+}
+function addCoachMessage(who,text){const box=document.getElementById("chatMessages"),b=document.createElement("div");b.className="bubble "+who;b.textContent=text;box.appendChild(b);box.scrollTop=box.scrollHeight}
+function buildCoachContext(){
+  const s=coachSummary();
+  return{summary:{sessions28d:s.sessions.length,sets28d:s.recentSets.length,prs28d:s.prs.length,latestSession:s.sessions[0]||null},exercises:s.top.map(x=>({exercise:x.name,best:x.best,volume:x.volume,sessions:x.sessions,progression:progressionForExercise(x.name)})),strongest:s.strongest?{exercise:s.strongest.name,estimated1RM:Math.round(s.strongest.e1rm),best:s.strongest.best}:null,nextWorkout:nextWorkoutName(),nextPlan:getPlanExercises(nextWorkoutName()).map(buildExercisePlan),recentSessions:s.sessions.slice(0,8)};
+}
+function localCoachAnswer(q){
+  const query=q.toLowerCase(),s=coachSummary();
+  if(!s.sessions.length)return"Your log is empty on this browser. If you were using V6 on this same device/browser, refresh once and the V6 migration should import it.";
+  if(/what.*(today|next)|next.*(workout|session)|train.*today/.test(query))return`Next up is ${nextWorkoutName()||"your next programmed workout"}. Check the Next Session panel for exercise-specific loads and rep targets based on your history.`;
+  if(/bench/.test(query)){
+    const name=uniqueExercises().find(n=>/bench press/i.test(n)),p=name?progressionForExercise(name):null;
+    if(p)return`Bench: latest average was ${p.avgReps.toFixed(1)} reps around ${p.avgWeight}kg. Best logged set is ${exerciseStats(name).best.weight}kg × ${exerciseStats(name).best.reps}. I'd ${p.action==="increase"?"increase load slightly":"keep the load and build reps"} next time. ${p.reason}`;
+  }
+  if(/volume|sets/.test(query))return`You've logged ${s.recentSets.length} working sets in the last 28 days. I’ll judge volume alongside exercise performance and recovery rather than chasing a fixed magic number.`;
+  if(/progress|improv|stronger|stall|plateau/.test(query)&&s.strongest)return`Your standout is ${s.strongest.name}: ${s.strongest.best.weight}kg × ${s.strongest.best.reps}, estimated 1RM ~${Math.round(s.strongest.e1rm)}kg. The coach now compares repeated exposures and uses the target rep range to decide between adding reps and adding load.`;
+  if(/arm|bicep|tricep/.test(query)){const names=uniqueExercises().filter(n=>/curl|tricep|skull|hammer|close-grip/i.test(n));const sets=allSets().filter(x=>names.includes(x.exercise)&&daysAgo(parseStoredDate(x.sessionDate)||Date.now())<=28).length;return`You've logged about ${sets} direct arm sets in the last 28 days. I'd keep volume stable while performance is progressing, and only add work if repeated exposures stall and recovery looks good.`}
+  return`Based on your log: ${s.sessions.length} sessions, ${s.recentSets.length} sets and ${s.prs.length} recent PRs in 28 days. Ask about a specific lift, progression, volume, plateau or your next session and I’ll use the actual data.`;
+}
+async function askCoach(){
+  const input=document.getElementById("coachInput"),q=input.value.trim();if(!q)return;
+  addCoachMessage("user",q);input.value="";
+  if(coachSettings.endpoint){
+    try{
+      addCoachMessage("coach","Thinking…");
+      const bubbles=document.getElementById("chatMessages"),temp=bubbles.lastElementChild;
+      const response=await fetch(coachSettings.endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,context:buildCoachContext(),system:"Act as a serious strength/hypertrophy coach. Use only supplied training data. Compare repeated exposures, respect programmed rep ranges, recommend conservative progression, flag fatigue only when supported, never invent data, and give concise actionable advice with a brief reason."})});
+      if(!response.ok)throw new Error("Endpoint error");
+      const json=await response.json();temp.remove();addCoachMessage("coach",json.reply||json.message||"The AI endpoint returned no reply.");return;
+    }catch(e){
+      const bubbles=document.getElementById("chatMessages");if(bubbles.lastElementChild?.textContent==="Thinking…")bubbles.lastElementChild.remove();
+      addCoachMessage("coach","AI endpoint unavailable — using the built-in coach instead.");
+    }
+  }
+  setTimeout(()=>addCoachMessage("coach",localCoachAnswer(q)),180);
+}
+let toastTimer;function showToast(message){const t=document.getElementById("toast");t.textContent=message;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),1800)}
+document.getElementById("coachInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();askCoach()}})
+init();
+</script>
+</body>
+</html>
